@@ -14,8 +14,8 @@ class SDPAPIClientV2 {
     // Configuration
     this.portalName = config.portalName || process.env.SDP_PORTAL_NAME || 'burtonmi';
     this.dataCenter = config.dataCenter || process.env.SDP_DATA_CENTER || 'US';
-    this.customDomain = config.customDomain || process.env.SDP_BASE_URL || 'https://helpdesk.pttg.com';
-    this.instanceName = config.instanceName || process.env.SDP_INSTANCE_NAME || 'itdesk';
+    this.customDomain = config.customDomain || process.env.SDP_BASE_URL || 'https://sc.burtonmi.gov';
+    this.instanceName = config.instanceName || process.env.SDP_INSTANCE_NAME || '766116682';
     
     // Initialize clients (use singleton OAuth client)
     this.oauth = SDPOAuthClient.getInstance(config);
@@ -293,7 +293,7 @@ class SDPAPIClientV2 {
       // Single priority filter - use filter_by
       const priorityMap = {
         'low': '1 - Low',
-        'medium': 'z - Medium',
+        'medium': '2 - Normal',
         'high': '3 - High',
         'urgent': '4 - Critical'
       };
@@ -322,7 +322,7 @@ class SDPAPIClientV2 {
       
       const priorityMap = {
         'low': '1 - Low',
-        'medium': 'z - Medium',
+        'medium': '2 - Normal',
         'high': '3 - High',
         'urgent': '4 - Critical'
       };
@@ -774,7 +774,7 @@ class SDPAPIClientV2 {
       // Use priority name format
       const priorityMap = {
         'low': '1 - Low',
-        'medium': 'z - Medium',
+        'medium': '2 - Normal',
         'high': '3 - High',
         'urgent': '4 - Critical'
       };
@@ -1372,7 +1372,7 @@ class SDPAPIClientV2 {
   }
   async searchSolutions(query, options) { return this.listSolutions(Object.assign({}, options || {}, { search: query })); }
   async createSolution(solutionData) {
-    const payload = { solution: { title: solutionData.title, content: solutionData.content,
+    const payload = { solution: { title: solutionData.title, description: solutionData.content,
       keywords: solutionData.keywords,
       topic: solutionData.topic ? { name: solutionData.topic } : undefined,
     } };
