@@ -1304,6 +1304,88 @@ class SDPAPIClientV2 {
       }));
     }
   };
+
+  // ASSETS
+  async listAssets(options = {}) {
+    const { limit = 25, search = '', state, sort_field = 'name', sort_order = 'asc' } = options;
+    const listInfo = { row_count: limit, start_index: 0, sort_field, sort_order, get_total_count: true };
+    if (search) listInfo.search_criteria = [{ field: 'name', condition: 'contains', value: search }];
+    if (state) { listInfo.search_criteria = (listInfo.search_criteria || []); listInfo.search_criteria.push({ field: 'state.name', condition: 'is', value: state }); }
+    const params = { input_data: JSON.stringify({ list_info: listInfo }) };
+    const response = await this.client.get('/assets', { params });
+    return { assets: response.data.assets || [], total_count: (response.data.response_status || {}).total_count || 0 };
+  }
+  async getAsset(assetId) {
+    const response = await this.client.get('/assets/' + assetId);
+    return response.data.asset;
+  }
+  async searchAssets(query, options) { return this.listAssets(Object.assign({}, options || {}, { search: query })); }
+
+  // CHANGES
+  async listChanges(options = {}) {
+    const { limit = 25, status, sort_field = 'created_time', sort_order = 'desc' } = options;
+    const listInfo = { row_count: limit, start_index: 0, sort_field, sort_order, get_total_count: true };
+    if (status) listInfo.search_criteria = [{ field: 'status.name', condition: 'is', value: status }];
+    const params = { input_data: JSON.stringify({ list_info: listInfo }) };
+    const response = await this.client.get('/changes', { params });
+    return { changes: response.data.changes || [], total_count: (response.data.response_status || {}).total_count || 0 };
+  }
+  async getChange(changeId) {
+    const response = await this.client.get('/changes/' + changeId);
+    return response.data.change;
+  }
+  async createChange(changeData) {
+    const payload = { change: { title: changeData.title, description: changeData.description,
+      change_type: changeData.change_type ? { name: changeData.change_type } : undefined,
+      priority: changeData.priority ? { name: changeData.priority } : undefined,
+      risk: changeData.risk ? { name: changeData.risk } : undefined,
+    } };
+    const params = { input_data: JSON.stringify(payload) };
+    const response = await this.client.post('/changes', null, { params });
+    return response.data.change;
+  }
+  async updateChange(changeId, updates) {
+    const payload = { change: {
+      title: updates.title, description: updates.description,
+      status: updates.status ? { name: updates.status } : undefined,
+      change_type: updates.change_type ? { name: updates.change_type } : undefined,
+      priority: updates.priority ? { name: updates.priority } : undefined,
+      risk: updates.risk ? { name: updates.risk } : undefined,
+    } };
+    const params = { input_data: JSON.stringify(payload) };
+    const response = await this.client.put('/changes/' + changeId, null, { params });
+    return response.data.change;
+  }
+
+  // SOLUTIONS
+  async listSolutions(options = {}) {
+    const { limit = 25, search = '', sort_field = 'created_time', sort_order = 'desc' } = options;
+    const listInfo = { row_count: limit, start_index: 0, sort_field, sort_order, get_total_count: true };
+    if (search) listInfo.search_criteria = [{ field: 'title', condition: 'contains', value: search }];
+    const params = { input_data: JSON.stringify({ list_info: listInfo }) };
+    const response = await this.client.get('/solutions', { params });
+    return { solutions: response.data.solutions || [], total_count: (response.data.response_status || {}).total_count || 0 };
+  }
+  async getSolution(solutionId) {
+    const response = await this.client.get('/solutions/' + solutionId);
+    return response.data.solution;
+  }
+  async searchSolutions(query, options) { return this.listSolutions(Object.assign({}, options || {}, { search: query })); }
+  async createSolution(solutionData) {
+    const payload = { solution: { title: solutionData.title, content: solutionData.content,
+      keywords: solutionData.keywords,
+      topic: solutionData.topic ? { name: solutionData.topic } : undefined,
+    } };
+    const params = { input_data: JSON.stringify(payload) };
+    const response = await this.client.post('/solutions', null, { params });
+    return response.data.solution;
+  }
+
+  // ATTACHMENTS
+  async getRequestAttachments(requestId) {
+    const response = await this.client.get('/requests/' + requestId + '/attachments');
+    return response.data.attachments || [];
+  }
 }
 
 module.exports = { SDPAPIClientV2 };

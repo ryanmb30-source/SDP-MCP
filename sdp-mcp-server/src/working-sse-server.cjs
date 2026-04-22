@@ -5,6 +5,8 @@
  * Full implementation with real API calls
  */
 
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const { SDPAPIClientV2 } = require('./sdp-api-client-v2.cjs');
@@ -636,9 +638,112 @@ const toolImplementations = {
         }, null, 2)
       }]
     };
-  }
-};
+  },
+  // ASSETS
+  async list_assets(params) {
+    const { limit = 25, search, state, sort_by, sort_order } = params;
+    const result = await sdpClient.listAssets({ limit, search, state, sort_field: sort_by, sort_order });
+    const formatted = (result.assets || []).map(a => ({
+      id: a.id, name: a.name, asset_tag: a.asset_tag, serial_number: a.serial_number,
+      state: a.state?.name, asset_type: a.asset_type?.name, product: a.product?.name,
+      assigned_to: a.assigned_to?.name, location: a.location?.name, department: a.department?.name,
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ assets: formatted, total_count: result.total_count }, null, 2) }] };
+  },
 
+  async get_asset(params) {
+    const { asset_id } = params;
+    if (!asset_id) throw new Error('asset_id is required');
+    const asset = await sdpClient.getAsset(asset_id);
+    return { content: [{ type: 'text', text: JSON.stringify(asset, null, 2) }] };
+  },
+
+  async search_assets(params) {
+    const { query, limit = 25, state } = params;
+    if (!query) throw new Error('query is required');
+    const result = await sdpClient.searchAssets(query, { limit, state });
+    const formatted = (result.assets || []).map(a => ({
+      id: a.id, name: a.name, asset_tag: a.asset_tag, serial_number: a.serial_number,
+      state: a.state?.name, asset_type: a.asset_type?.name, assigned_to: a.assigned_to?.name,
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ query, assets: formatted, total_count: result.total_count }, null, 2) }] };
+  },
+
+  // CHANGES
+  async list_changes(params) {
+    const { limit = 25, status, sort_by, sort_order } = params;
+    const result = await sdpClient.listChanges({ limit, status, sort_field: sort_by, sort_order });
+    const formatted = (result.changes || []).map(c => ({
+      id: c.id, title: c.title, status: c.status?.name, change_type: c.change_type?.name,
+      priority: c.priority?.name, risk: c.risk?.name, created_by: c.created_by?.name,
+      scheduled_start: c.scheduled_start_time?.display_value, scheduled_end: c.scheduled_end_time?.display_value,
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ changes: formatted, total_count: result.total_count }, null, 2) }] };
+  },
+
+  async get_change(params) {
+    const { change_id } = params;
+    if (!change_id) throw new Error('change_id is required');
+    const change = await sdpClient.getChange(change_id);
+    return { content: [{ type: 'text', text: JSON.stringify(change, null, 2) }] };
+  },
+
+  async create_change(params) {
+    const change = await sdpClient.createChange(params);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, change_id: change ? change.id : null, title: change ? change.title : null, status: change ? change.status && change.status.name : null, message: 'Change created successfully' }, null, 2) }] };
+  },
+
+  async update_change(params) {
+    const { change_id, ...updates } = params;
+    if (!change_id) throw new Error('change_id is required');
+    const change = await sdpClient.updateChange(change_id, updates);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, change_id: change_id, status: change ? change.status && change.status.name : null, message: 'Change ' + change_id + ' updated successfully' }, null, 2) }] };
+  },
+
+  // SOLUTIONS
+  async list_solutions(params) {
+    const { limit = 25, search, sort_by, sort_order } = params;
+    const result = await sdpClient.listSolutions({ limit, search, sort_field: sort_by, sort_order });
+    const formatted = (result.solutions || []).map(s => ({
+      id: s.id, title: s.title, topic: s.topic?.name, keywords: s.keywords,
+      created_by: s.created_by?.name, created_time: s.created_time?.display_value, views: s.views,
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ solutions: formatted, total_count: result.total_count }, null, 2) }] };
+  },
+
+  async get_solution(params) {
+    const { solution_id } = params;
+    if (!solution_id) throw new Error('solution_id is required');
+    const solution = await sdpClient.getSolution(solution_id);
+    return { content: [{ type: 'text', text: JSON.stringify(solution, null, 2) }] };
+  },
+
+  async search_solutions(params) {
+    const { query, limit = 25 } = params;
+    if (!query) throw new Error('query is required');
+    const result = await sdpClient.searchSolutions(query, { limit });
+    const formatted = (result.solutions || []).map(s => ({
+      id: s.id, title: s.title, topic: s.topic?.name, keywords: s.keywords,
+      created_by: s.created_by?.name, created_time: s.created_time?.display_value,
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ query, solutions: formatted, total_count: result.total_count }, null, 2) }] };
+  },
+
+  async create_solution(params) {
+    if (!params.title || !params.content) throw new Error('title and content are required');
+    const solution = await sdpClient.createSolution(params);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, solution_id: solution ? solution.id : null, title: solution ? solution.title : null, message: 'Solution created successfully' }, null, 2) }] };
+  },
+
+  // ATTACHMENTS
+  async get_attachments(params) {
+    const { request_id } = params;
+    if (!request_id) throw new Error('request_id is required');
+    const attachments = await sdpClient.getRequestAttachments(request_id);
+    return { content: [{ type: 'text', text: JSON.stringify({ request_id, attachments, total: attachments.length }, null, 2) }] };
+  },
+
+};
 // Tool definitions
 const tools = [
   {
@@ -1009,6 +1114,20 @@ const tools = [
       required: ['request_id']
     }
   }
+,
+  { name: 'list_assets', description: 'List assets with optional filters', inputSchema: { type: 'object', properties: { limit: { type: 'number', default: 25, maximum: 100 }, search: { type: 'string', description: 'Search by name' }, state: { type: 'string', enum: ['In Use','In Stock','In Repair','Disposed','Expired','Loaned'] }, sort_by: { type: 'string', enum: ['name','asset_tag','state','asset_type'], default: 'name' }, sort_order: { type: 'string', enum: ['asc','desc'], default: 'asc' } } } },
+  { name: 'get_asset', description: 'Get detailed information about a specific asset', inputSchema: { type: 'object', properties: { asset_id: { type: 'string', description: 'Asset ID' } }, required: ['asset_id'] } },
+  { name: 'search_assets', description: 'Search assets by name or tag', inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number', default: 25 }, state: { type: 'string' } }, required: ['query'] } },
+  { name: 'list_changes', description: 'List change requests with optional status filter', inputSchema: { type: 'object', properties: { limit: { type: 'number', default: 25, maximum: 100 }, status: { type: 'string', enum: ['Requested','Planning','Awaiting Approval','Approved','Rejected','In Progress','Completed','Closed','Cancelled'] }, sort_by: { type: 'string', enum: ['created_time','scheduled_start_time','title','priority'], default: 'created_time' }, sort_order: { type: 'string', enum: ['asc','desc'], default: 'desc' } } } },
+  { name: 'get_change', description: 'Get detailed information about a specific change request', inputSchema: { type: 'object', properties: { change_id: { type: 'string' } }, required: ['change_id'] } },
+  { name: 'create_change', description: 'Create a new change request', inputSchema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' }, change_type: { type: 'string', enum: ['Minor','Standard','Major','Emergency'] }, priority: { type: 'string', enum: ['Low','Medium','High','Urgent'] }, risk: { type: 'string', enum: ['Low','Medium','High','Very High'] }, scheduled_start_time: { type: 'string', description: 'ISO 8601 datetime' }, scheduled_end_time: { type: 'string', description: 'ISO 8601 datetime' } }, required: ['title'] } },
+  { name: 'update_change', description: 'Update an existing change request', inputSchema: { type: 'object', properties: { change_id: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, status: { type: 'string', enum: ['Requested','Planning','Awaiting Approval','Approved','In Progress','Completed','Closed','Cancelled'] }, change_type: { type: 'string' }, priority: { type: 'string' }, risk: { type: 'string' } }, required: ['change_id'] } },
+  { name: 'list_solutions', description: 'List knowledge base solutions/articles', inputSchema: { type: 'object', properties: { limit: { type: 'number', default: 25, maximum: 100 }, search: { type: 'string', description: 'Filter by title keyword' }, sort_by: { type: 'string', enum: ['created_time','title','views'], default: 'created_time' }, sort_order: { type: 'string', enum: ['asc','desc'], default: 'desc' } } } },
+  { name: 'get_solution', description: 'Get a specific knowledge base article', inputSchema: { type: 'object', properties: { solution_id: { type: 'string' } }, required: ['solution_id'] } },
+  { name: 'search_solutions', description: 'Search knowledge base articles by keyword', inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number', default: 25 } }, required: ['query'] } },
+  { name: 'create_solution', description: 'Create a new knowledge base article', inputSchema: { type: 'object', properties: { title: { type: 'string' }, content: { type: 'string' }, keywords: { type: 'string', description: 'Comma-separated keywords' }, topic: { type: 'string', description: 'Topic/category name' } }, required: ['title','content'] } },
+  { name: 'get_attachments', description: 'Get attachments for a request', inputSchema: { type: 'object', properties: { request_id: { type: 'string' } }, required: ['request_id'] } }
+
 ];
 
 // Handle JSON-RPC messages
@@ -1175,7 +1294,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.error('- get_metadata: Get valid field values');
   console.error('- claude_code_command: Claude Code integration');
   
-  console.error('\n🪟 Windows VS Code Configuration:');
+  console.error('\nðŸªŸ Windows VS Code Configuration:');
   console.error('Create .vscode/mcp.json or %USERPROFILE%\\.mcp.json:');
   console.error(JSON.stringify({
     servers: {
@@ -1188,6 +1307,6 @@ app.listen(PORT, '0.0.0.0', () => {
   }, null, 2));
   
   if (!sdpClient) {
-    console.error('\n⚠️  SDP client not initialized. Please configure OAuth credentials.');
+    console.error('\nâš ï¸  SDP client not initialized. Please configure OAuth credentials.');
   }
 });
