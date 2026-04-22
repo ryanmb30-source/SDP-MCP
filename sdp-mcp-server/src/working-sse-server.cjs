@@ -109,8 +109,8 @@ const toolImplementations = {
       switch (command) {
         case 'open_project':
           result.message += `1. Open Claude Code
-2. Navigate to: ${project_path || '/Users/kalten/projects/SDP-MCP'}
-3. The MCP server project is at: /Users/kalten/projects/SDP-MCP`;
+2. Navigate to: ${project_path || 'C:\\SDP-MCP\\SDP-MCP-fork\\sdp-mcp-server'}
+3. The MCP server project is at: C:\\SDP-MCP\\SDP-MCP-fork\\sdp-mcp-server`;
           break;
           
         case 'create_file':
@@ -151,9 +151,9 @@ const toolImplementations = {
       
       // Add project context
       result.project_info = {
-        main_project: '/Users/kalten/projects/SDP-MCP',
-        server_file: '/Users/kalten/projects/SDP-MCP/src/mcp-sse-sdp-integrated.js',
-        api_client: '/Users/kalten/projects/SDP-MCP/src/sdp-api-client-v2.js',
+        main_project: 'C:\\SDP-MCP\\SDP-MCP-fork\\sdp-mcp-server',
+        server_file: 'C:\\SDP-MCP\\SDP-MCP-fork\\sdp-mcp-server\\src\\working-sse-server.cjs',
+        api_client: 'C:\\SDP-MCP\\SDP-MCP-fork\\sdp-mcp-server\\src\\sdp-api-client-v2.cjs',
         current_directory: process.cwd()
       };
       
@@ -760,7 +760,7 @@ const tools = [
         project_path: {
           type: 'string',
           description: 'Path to project or file',
-          default: '/Users/kalten/projects/SDP-MCP'
+          default: 'C:\\SDP-MCP\\SDP-MCP-fork\\sdp-mcp-server'
         },
         args: {
           type: 'array',

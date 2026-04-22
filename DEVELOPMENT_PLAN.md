@@ -2,7 +2,7 @@
 
 *Created: July 2025*  
 *Last Updated: January 2025*  
-*Project Location: `/Users/kalten/projects/SDP-MCP/sdp-mcp-server/`*
+*Project Location: `C:\SDP-MCP\SDP-MCP-fork\sdp-mcp-server\`*
 
 ## 📊 Current Progress
 
@@ -11,7 +11,7 @@
 ### ✅ Working Implementation Status (January 2025)
 - **SSE Server**: Fully operational on port 3456
 - **MCP Integration**: Successfully connected with Claude Code client
-- **SDP Tools**: All 8 tools working (list, get, search, create, update, close, add_note, get_metadata)
+- **SDP Tools**: All 25 tools working (requests, assets, changes, solutions, attachments, email, metadata)
 - **Authentication**: OAuth with permanent refresh tokens configured
 - **Architecture**: Single-tenant implementation (multi-tenant deferred based on MCP 2025 limitations)
 
@@ -438,10 +438,10 @@ SDP_OAUTH_CLIENT_ID=your_client_id
 SDP_OAUTH_CLIENT_SECRET=your_client_secret
 SDP_OAUTH_REFRESH_TOKEN=your_permanent_refresh_token
 
-# Custom Domain Configuration
-SDP_BASE_URL=https://helpdesk.pttg.com
-SDP_INSTANCE_NAME=itdesk
-SDP_PORTAL_NAME=kaltentech
+# Custom Domain Configuration (City of Burton IT)
+SDP_BASE_URL=https://sc.burtonmi.gov
+SDP_INSTANCE_NAME=766116682
+SDP_PORTAL_NAME=burtonmi
 SDP_DATA_CENTER=US
 
 # Server
@@ -692,9 +692,9 @@ Based on 2025 MCP limitations:
 
 ### Critical Configuration Updates ⚠️
 1. **Custom Domain Support**:
-   - ✅ API uses custom domain: `https://helpdesk.pttg.com`
-   - ✅ Instance name: `itdesk`
-   - ✅ Full API path: `https://helpdesk.pttg.com/app/itdesk/api/v3`
+   - ✅ API uses custom domain: `https://sc.burtonmi.gov`
+   - ✅ Instance name: `766116682`
+   - ✅ Full API path: `https://sc.burtonmi.gov/app/766116682/api/v3`
    - ✅ OAuth tokens from Zoho work with custom domains
 
 2. **OAuth Token Lifecycle**:

@@ -8,10 +8,10 @@ const { SDPOAuthClient } = require('./sdp-oauth-client.cjs');
 
 class SDPMetadataClient {
   constructor(config = {}) {
-    this.portalName = config.portalName || process.env.SDP_PORTAL_NAME || 'kaltentech';
+    this.portalName = config.portalName || process.env.SDP_PORTAL_NAME || 'burtonmi';
     this.dataCenter = config.dataCenter || process.env.SDP_DATA_CENTER || 'US';
-    this.customDomain = config.customDomain || process.env.SDP_BASE_URL || 'https://helpdesk.pttg.com';
-    this.instanceName = config.instanceName || process.env.SDP_INSTANCE_NAME || 'itdesk';
+    this.customDomain = config.customDomain || process.env.SDP_BASE_URL || 'https://sc.burtonmi.gov';
+    this.instanceName = config.instanceName || process.env.SDP_INSTANCE_NAME || '766116682';
     
     this.oauth = SDPOAuthClient.getInstance(config);
     

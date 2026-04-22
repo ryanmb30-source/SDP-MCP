@@ -1,12 +1,12 @@
 # Claude AI Assistant Guidelines for Service Desk Plus Cloud API
 
-This document outlines the rules and conventions for AI assistants working on this AI driven MCP Server for the Service Desk Plus Cloud API integration.  
+This document outlines the rules and conventions for AI assistants working on this AI-driven MCP Server for the Service Desk Plus Cloud API integration — deployed for **City of Burton IT**.
 
 ## 📁 Project Location
 
-**NEW PROJECT LOCATION**: `/Users/kalten/projects/SDP-MCP/sdp-mcp-server/`
+**Project Location**: `C:\SDP-MCP\SDP-MCP-fork\sdp-mcp-server\`
 
-This is the main development directory for the new multi-tenant MCP server implementation. All new code should be created in this directory, NOT in the `example/` folder which contains reference implementations from previous projects.
+This is the main development directory for the single-tenant MCP server implementation. All new code should be created in the `sdp-mcp-server/` folder. The `example/` folder contains reference implementations and knowledge base documentation — do not modify it.
 
 ## 🎯 Project Scope
 
@@ -22,14 +22,14 @@ This MCP server enables users to **create, update, close, and inquire** about al
 
 ## 🏗️ Project Architecture Overview
 
-### Current Implementation (January 2025)
-The project currently uses a **single-tenant** SSE server implementation due to MCP protocol limitations in 2025:
+### Current Implementation
+The project uses a **single-tenant** SSE server implementation:
 - Direct MCP protocol implementation over Server-Sent Events (SSE)
 - Runs on port 3456 with `/sse` endpoint
-- OAuth tokens configured via environment variables
+- OAuth tokens configured via environment variables (`.env` file)
 - Singleton OAuth client prevents rate limiting issues
 - Smart token refresh only on 401 errors (not 404/400)
-- Production-ready and fully tested with Claude Code client
+- Production-ready and tested with Claude Code client
 
 ### OAuth Token Architecture
 - **Singleton Pattern**: `SDPOAuthClient.getInstance()` ensures single instance
@@ -50,7 +50,7 @@ Multi-tenant support is planned when MCP protocol evolves to better support it:
 **Zoho OAuth Token Management:**
 - **Access Tokens**: Valid for 1 hour only, must be refreshed
 - **Refresh Tokens**: Unlimited lifetime until manually revoked
-- **Rate Limits**: 
+- **Rate Limits**:
   - Maximum 20 refresh tokens per account
   - Maximum 5 refresh tokens per minute
   - Hitting rate limits blocks all token operations
@@ -63,113 +63,99 @@ Multi-tenant support is planned when MCP protocol evolves to better support it:
 - ✅ Cache valid tokens until expiry
 - ✅ Implement refresh locks to prevent concurrent refreshes
 - ❌ Never expose tokens in logs or error messages
+- ❌ Never hardcode credentials — always use environment variables
 - ❌ Don't refresh if token is still valid
 
-## 🌐 Server Access Points
+## 🌐 Server Access
 
-The MCP server can be accessed through multiple addresses:
-- `studio` - Primary hostname
-- `studio.pttg.loc` - Fully qualified domain name
-- `192.168.2.10` - Primary LAN IP
-- `10.212.0.7` - Secondary network IP
-- `localhost` or `127.0.0.1` - Local access only
-
-Configure clients to use the appropriate address based on their network location.
+The MCP server runs on port 3456. Configure clients to use the appropriate address:
+- `localhost` or `127.0.0.1` — local access only
+- Server IP on your local network — for remote clients
 
 ## 📚 Knowledge Base & Examples
 
 ### Knowledge Folder
 - **Always** consult `example/knowledge/` folder for detailed API documentation
 - **Reference** key documentation files:
-  - `service-desk-plus-authentication.md` - OAuth implementation and data center endpoints
-  - `service-desk-plus-sse-implementation.md` - **NEW**: Working SSE server implementation details
-  - `multi-user-mcp-architecture.md` - Multi-tenant architecture (future reference)
-  - `service-desk-plus-oauth-scopes.md` - Complete scope reference and permissions
-  - `mcp-server-architecture.md` - Server implementation patterns
-  - `mcp-security-best-practices.md` - Security guidelines
-  - `mcp-client-server-communication.md` - Transport protocols and patterns
+  - `service-desk-plus-authentication.md` — OAuth implementation and data center endpoints
+  - `service-desk-plus-sse-implementation.md` — Working SSE server implementation details
+  - `multi-user-mcp-architecture.md` — Multi-tenant architecture (future reference)
+  - `service-desk-plus-oauth-scopes.md` — Complete scope reference and permissions
+  - `mcp-server-architecture.md` — Server implementation patterns
+  - `mcp-security-best-practices.md` — Security guidelines
+  - `mcp-client-server-communication.md` — Transport protocols and patterns
 - **Check** knowledge folder before making assumptions about API behavior
 - **Use** documented patterns and code examples from knowledge base
 
 ### Project Structure
 ```
-sdp-mcp-server/                  # NEW PROJECT LOCATION
-├── src/                         # Source code
-│   ├── working-sse-server.cjs   # Main SSE server implementation
-│   ├── sdp-api-client-v2.cjs   # SDP API client with OAuth
-│   ├── sdp-oauth-client.cjs    # OAuth token management
-│   ├── sdp-api-metadata.cjs    # Metadata retrieval
-│   ├── server/                  # Future MCP server implementation
-│   ├── tenants/                 # Future multi-tenant management
-│   ├── auth/                    # Authentication layer
-│   ├── sdp/                     # Service Desk Plus integration
-│   ├── tools/                   # MCP tool implementations
-│   ├── database/                # Database layer (future)
-│   ├── monitoring/              # Observability (future)
-│   └── utils/                   # Shared utilities
-├── tests/                       # Test files
-├── docs/                        # Project documentation
-│   ├── MULTI_USER_SETUP.md     # Multi-user remote access guide
-│   ├── OAUTH_SETUP_GUIDE.md    # OAuth setup instructions
-│   └── [other docs]            # Additional documentation
-├── scripts/                     # Utility scripts
-│   ├── exchange-code.js        # OAuth code exchange
+sdp-mcp-server/                   # Main project directory
+├── src/                          # Source code
+│   ├── working-sse-server.cjs    # Main SSE server (25 tools)
+│   ├── sdp-api-client-v2.cjs    # SDP API client with OAuth
+│   ├── sdp-oauth-client.cjs     # OAuth token management (singleton)
+│   ├── sdp-api-metadata.cjs     # Metadata retrieval
+│   ├── sdp-api-users.cjs        # Users/technicians module
+│   ├── utils/
+│   │   └── error-logger.cjs     # Structured API error logging
+│   ├── server/                   # Future MCP server implementation
+│   ├── tenants/                  # Future multi-tenant management
+│   ├── auth/                     # Authentication layer (TypeScript)
+│   ├── sdp/                      # Service Desk Plus integration (TypeScript)
+│   ├── tools/                    # MCP tool implementations (future)
+│   ├── database/                 # Database layer (future)
+│   └── monitoring/               # Observability (future)
+├── tests/                        # Test files
+├── docs/                         # Project documentation
+│   ├── MULTI_USER_SETUP.md      # Multi-user remote access guide
+│   ├── OAUTH_SETUP.md           # OAuth setup instructions
+│   └── OAUTH_SETUP_GUIDE.md     # Detailed OAuth guide
+├── scripts/                      # Utility scripts
+│   ├── exchange-code.js         # OAuth code exchange
 │   ├── test-api-custom-domain.js # API testing
-│   └── [other scripts]         # Utility scripts
-├── .env                         # Environment configuration
-├── .env.example                 # Example environment file
-├── start-sse-server.sh         # Server startup script
-├── SSE_SERVER_READY.md         # Server status documentation
-├── QUICK_START.md              # Quick start guide for users
-├── DEVELOPMENT_PLAN.md         # Comprehensive development plan
-└── CLAUDE.md                   # This file - AI assistant guidelines
+│   └── [other scripts]
+├── .env                          # Environment configuration (NOT in git)
+├── .env.example                  # Example environment file (template only)
+├── package.json                  # Node.js dependencies
+└── MCP_TOOLS.md                  # Full tool reference (25 tools)
 
-example/                         # Reference implementations (DO NOT MODIFY)
-├── knowledge/                   # API documentation and technical guides
-│   ├── service-desk-plus-authentication.md    # OAuth flows and endpoints
-│   ├── multi-user-mcp-architecture.md        # Multi-tenant design
-│   ├── service-desk-plus-oauth-scopes.md     # Scope permissions reference
-│   ├── service-desk-plus-mandatory-fields.md # Required fields and error handling
-│   ├── service-desk-plus-sse-implementation.md # SSE server implementation details
-│   ├── mcp-server-architecture.md            # Server implementation
-│   ├── mcp-security-best-practices.md       # Security guidelines
-│   ├── mcp-client-server-communication.md   # Communication patterns
-│   └── [future documentation files]
-├── api-examples/                # Working code examples (if present)
-├── mcp-tools/                   # Example MCP tool implementations
-└── config/                      # Example configuration files
+example/                          # Reference implementations (DO NOT MODIFY)
+├── knowledge/                    # API documentation and technical guides
+│   ├── service-desk-plus-authentication.md
+│   ├── service-desk-plus-requests-api.md
+│   ├── service-desk-plus-oauth-scopes.md
+│   ├── service-desk-plus-mandatory-fields.md
+│   ├── service-desk-plus-sse-implementation.md
+│   ├── service-desk-plus-search-criteria.md
+│   ├── service-desk-plus-status-codes.md
+│   ├── multi-user-mcp-architecture.md
+│   ├── mcp-server-architecture.md
+│   ├── mcp-security-best-practices.md
+│   └── mcp-client-server-communication.md
+└── [reference code examples]
 ```
 
 ### Documentation Standards
-When adding new documentation to the knowledge folder:
+When adding new documentation to `example/knowledge/`:
 
 1. **File Naming**
    - Use descriptive kebab-case names: `service-desk-plus-[topic].md`
    - Group related topics with common prefixes
-   - Examples: `service-desk-plus-requests.md`, `service-desk-plus-projects.md`
 
 2. **Document Structure**
    - Start with a clear overview section
    - Include table of contents for long documents
    - Use consistent heading hierarchy
    - Provide practical code examples
-   - Include troubleshooting sections
 
 3. **Content Requirements**
    - Document all endpoints with full URLs
    - Include request/response examples
    - Specify required headers and parameters
    - Note any API quirks or limitations
-   - Provide error handling guidance
-   - Include security best practices
+   - Include error handling guidance
 
-4. **Code Examples**
-   - Provide examples in multiple languages (Python, Node.js minimum)
-   - Include complete, runnable code
-   - Add inline comments explaining key concepts
-   - Show both success and error handling
-
-5. **Maintenance**
+4. **Maintenance**
    - Date stamp major updates
    - Note API version compatibility
    - Mark deprecated features clearly
@@ -190,151 +176,101 @@ When adding new documentation to the knowledge folder:
 ### Core API Endpoints
 
 #### Requests API
-- **Documentation**: https://www.manageengine.com/products/service-desk/sdpod-v3-api/requests/request.html
-- **Full API Reference**: `example/knowledge/service-desk-plus-requests-api.md`
-- **Operations**: Create, Read, Update, Delete, Close, Pickup, Add Notes, Add Attachments
 - **Key Endpoints**:
-  - `GET /api/v3/requests` - List requests with filtering and pagination
-  - `POST /api/v3/requests` - Create request (mandatory: subject)
-  - `GET /api/v3/requests/{id}` - Get request details
-  - `PUT /api/v3/requests/{id}` - Update request
-  - `DELETE /api/v3/requests/{id}` - Delete request
-  - `POST /api/v3/requests/{id}/notes` - Add note to request
-  - `POST /api/v3/requests/{id}/_uploads` - Add attachment to request
-- **Field Limits**: 
-  - Subject: 250 characters maximum
-  - Impact Details: 250 characters maximum
-  - Description: HTML supported
-- **Advanced Features**:
-  - Search criteria with logical operators (AND, OR)
-  - Complex filtering with multiple conditions
-  - Pagination with row_count (max 100) and page/start_index
-  - Sorting by any field with asc/desc order
-  - Asset and configuration item associations
-  - User-defined fields (UDF) support
-  - Service catalog resources integration
-  - Approval workflows and service approvers
-  - Attachment management with multipart uploads
-
-#### Problems API
-- **Documentation**: https://www.manageengine.com/products/service-desk/sdpod-v3-api/problems/problem.html
-- **Operations**: Create, Read, Update, Delete, Analyze
-- **Key Endpoints**:
-  - `GET /api/v3/problems` - List problems
-  - `POST /api/v3/problems` - Create problem
-  - `GET /api/v3/problems/{id}` - Get problem details
-  - `PUT /api/v3/problems/{id}` - Update problem
-  - `DELETE /api/v3/problems/{id}` - Delete problem
-
-#### Changes API
-- **Documentation**: https://www.manageengine.com/products/service-desk/sdpod-v3-api/changes/change.html
-- **Operations**: Create, Read, Update, Delete, Approve
-- **Key Endpoints**:
-  - `GET /api/v3/changes` - List changes
-  - `POST /api/v3/changes` - Create change
-  - `GET /api/v3/changes/{id}` - Get change details
-  - `PUT /api/v3/changes/{id}` - Update change
-  - `DELETE /api/v3/changes/{id}` - Delete change
-- **Related**: 
-  - Change Approvals: https://www.manageengine.com/products/service-desk/sdpod-v3-api/changes/change_approval.html
-
-#### Projects API
-- **Documentation**: Check main API portal for projects documentation
-- **Operations**: Create, Read, Update, Delete projects with milestones and tasks
-- **Key Endpoints**:
-  - `GET /api/v3/projects` - List projects
-  - `POST /api/v3/projects` - Create project
-  - `GET /api/v3/projects/{id}` - Get project details
-  - `PUT /api/v3/projects/{id}` - Update project
-  - `GET /api/v3/projects/{id}/milestones` - List milestones
-  - `GET /api/v3/projects/{id}/milestones/{mid}/tasks` - List tasks
+  - `GET /api/v3/requests` — List requests with filtering and pagination
+  - `POST /api/v3/requests` — Create request (required: subject)
+  - `GET /api/v3/requests/{id}` — Get request details
+  - `PUT /api/v3/requests/{id}` — Update request
+  - `POST /api/v3/requests/{id}/notes` — Add note
+  - `GET /api/v3/requests/{id}/notes` — Get conversation history
+  - `GET /api/v3/requests/{id}/attachments` — Get attachments
+- **Field Limits**: Subject: 250 chars max. Impact Details: 250 chars max.
+- **Advanced Features**: Search criteria with logical operators, pagination, sorting, UDF support
 
 #### Assets API
-- **Documentation**: Check main API portal for assets documentation
-- **Operations**: Create, Read, Update, Delete assets and configurations
-- **Key Endpoints**:
-  - `GET /api/v3/assets` - List assets
-  - `POST /api/v3/assets` - Create asset
-  - `GET /api/v3/assets/{id}` - Get asset details
-  - `PUT /api/v3/assets/{id}` - Update asset
-  - `GET /api/v3/asset_computers` - List computers (new endpoint)
+- `GET /api/v3/assets` — List assets
+- `GET /api/v3/assets/{id}` — Get asset details
+
+#### Changes API
+- `GET /api/v3/changes` — List changes
+- `POST /api/v3/changes` — Create change
+- `GET /api/v3/changes/{id}` — Get change details
+- `PUT /api/v3/changes/{id}` — Update change
+
+#### Solutions API
+- `GET /api/v3/solutions` — List knowledge base articles
+- `POST /api/v3/solutions` — Create article
+- `GET /api/v3/solutions/{id}` — Get article
 
 ### Authentication
-- **OAuth 2.0 Guide**: https://www.manageengine.com/products/service-desk/sdpod-v3-api/getting-started/oauth-2.0.html
+- **OAuth 2.0**: Zoho self-client credentials
 - **Headers Required**:
-  - `Authorization: Bearer {access_token}`
+  - `Authorization: Zoho-oauthtoken {access_token}`
   - `Accept: application/vnd.manageengine.sdp.v3+json`
 
-### Custom Domain Configuration
-- **Base URL**: `https://helpdesk.pttg.com` (custom domain, not sdpondemand.manageengine.com)
-- **Instance Name**: `itdesk`
-- **Full API Path**: `https://helpdesk.pttg.com/app/itdesk/api/v3`
-- **OAuth Tokens**: Obtained from Zoho accounts (accounts.zoho.com) but work with custom domain
+### City of Burton IT Configuration
+- **Base URL**: `https://sc.burtonmi.gov`
+- **Instance Name**: `766116682`
+- **Full API Path**: `https://sc.burtonmi.gov/app/766116682/api/v3`
+- **Portal Name**: `burtonmi`
+- **OAuth Tokens**: Obtained from Zoho accounts (accounts.zoho.com)
 
 ### Important Notes
-- **Status Handling**: "Cancelled", "Closed", and "Resolved" statuses are all treated as closed
-- **Attachments**: Use PUT method for adding attachments (old upload endpoint deprecated)
+- **Status Handling**: "Cancelled", "Closed", and "Resolved" are all treated as closed
+- **Users endpoint**: `/api/v3/users` does NOT exist in SDP Cloud API v3 — technician info is embedded in request objects. `list_technicians`, `get_technician`, and `find_technician` tools return stub responses.
+- **Priority on create**: Skip priority field on creation (SDP business rule 4002) — set it via update after creation
 - **Search**: Use search criteria guide for complex queries
-- **Errors**: Refer to common error codes documentation
-- **Error 4000**: General failure - check error messages array for details
-- **Error 4002**: UNAUTHORISED - verify custom domain and instance name
-- **Error 4012**: Mandatory fields missing - check `service-desk-plus-mandatory-fields.md`
+- **Error 4000**: General failure — check error messages array for details
+- **Error 4002**: UNAUTHORISED — verify custom domain and instance name
+- **Error 4012**: Mandatory fields missing — check `example/knowledge/service-desk-plus-mandatory-fields.md`
 - **Instance Configuration**: Each SDP instance may require different mandatory fields
 
 **IMPORTANT REMINDER**: Always check `example/knowledge/` folder for detailed implementation examples and patterns before making API calls!
 
 ## 🔄 Project Awareness & Context
 
-- **Always** read `DEVELOPMENT_PLAN.md` for comprehensive project roadmap and status
-- **Check** `QUICK_START.md` for user onboarding and quick reference
+- **Check** `DEVELOPMENT_PLAN.md` for comprehensive project roadmap and status
+- **Check** `sdp-mcp-server/MCP_TOOLS.md` for complete tool reference (25 tools)
 - **Review** documentation in `docs/` folder:
-  - `docs/MULTI_USER_SETUP.md` - Multi-user remote access architecture
-  - `docs/OAUTH_SETUP_GUIDE.md` - Detailed OAuth setup instructions
+  - `docs/MULTI_USER_SETUP.md` — Multi-user remote access architecture
+  - `docs/OAUTH_SETUP.md` — OAuth setup instructions
 - **Study** `example/knowledge/` folder for API patterns and examples
-- **Understand** the OAuth 2.0 authentication flow with permanent refresh tokens
-- **Reference** OAuth scopes and multi-tenant patterns in knowledge base
-- **Use** npm for all package management operations
+- **Reference** OAuth scopes in `example/knowledge/service-desk-plus-oauth-scopes.md`
 
 ## 🏢 Architecture Notes
 
 ### Current Single-Tenant Implementation
-The production server uses a single-tenant architecture:
+Production server uses a single-tenant architecture:
 - OAuth tokens configured via environment variables
-- One server instance per organization
+- One server instance for the organization
 - Simple and reliable for current MCP limitations
-- Full isolation by running separate instances
 
 ### Future Multi-Tenant Architecture (Deferred)
 When MCP protocol evolves to support stateless connections:
-- **Self-Client**: Each tenant uses their own Service Desk Plus self-client OAuth app
-- **Tenant Isolation**: Complete separation of tokens, data, and rate limits per tenant
-- **Scope-Based Access**: Tools restricted based on OAuth scopes granted to each tenant
-- **Per-Tenant Encryption**: Each tenant's tokens encrypted with derived keys
+- **Self-Client**: Each tenant uses their own SDP self-client OAuth app
+- **Tenant Isolation**: Complete separation of tokens, data, and rate limits
+- **Scope-Based Access**: Tools restricted based on OAuth scopes per tenant
 
-### OAuth Scope Management
-- **Currently**: All configured scopes available to single tenant
-- **Future**: Validate tenant has necessary scopes in their self-client setup
-- **Reference**: `example/knowledge/service-desk-plus-oauth-scopes.md` for complete scope list
+## 🚀 Current Implementation Status
 
-## 🚀 Current Implementation Status (January 2025)
-
-### ✅ PRODUCTION READY - Complete Success
-The production implementation is now **FULLY FUNCTIONAL**:
-- **Location**: `sdp-mcp-server/src/working-sse-server.cjs`
+### ✅ PRODUCTION READY — 25 Tools Working
+The production implementation is **FULLY FUNCTIONAL**:
+- **File**: `sdp-mcp-server/src/working-sse-server.cjs`
 - **Port**: 3456
 - **Endpoint**: `/sse`
-- **Status**: ✅ **ALL 11 TOOLS WORKING PERFECTLY** (100% Success Rate)
-- **Architecture**: Direct MCP protocol implementation (not using SDK SSEServerTransport)
-- **OAuth**: Comprehensive scopes with zero rate limiting issues
-- **Testing**: Complete client validation confirms all functionality works
+- **Status**: ✅ **ALL 25 TOOLS WORKING**
+- **Architecture**: Direct MCP protocol over SSE
+- **OAuth**: Singleton client with global refresh lock
 
 ### Starting the Server
 ```bash
-cd /Users/kalten/projects/SDP-MCP/sdp-mcp-server
-./start-sse-server.sh
+cd C:\SDP-MCP\SDP-MCP-fork\sdp-mcp-server
+node src/working-sse-server.cjs
+```
 
-# Or run in background:
-node src/working-sse-server.cjs > server.log 2>&1 &
+Or with log file:
+```bash
+node src/working-sse-server.cjs > server.log 2>&1
 ```
 
 ### Client Configuration
@@ -343,7 +279,7 @@ node src/working-sse-server.cjs > server.log 2>&1 &
   "mcpServers": {
     "service-desk-plus": {
       "command": "npx",
-      "args": ["mcp-remote", "http://192.168.2.10:3456/sse", "--allow-http"]
+      "args": ["mcp-remote", "http://YOUR-SERVER-IP:3456/sse", "--allow-http"]
     }
   }
 }
@@ -351,19 +287,20 @@ node src/working-sse-server.cjs > server.log 2>&1 &
 
 ## 🧱 Code Structure & Modularity
 
-### Current Implementation Files
-- `src/working-sse-server.cjs` - Main SSE server with MCP protocol
-- `src/sdp-api-client-v2.cjs` - SDP API client with OAuth
-- `src/sdp-oauth-client.cjs` - OAuth token management  
-- `src/sdp-api-metadata.cjs` - Metadata retrieval
+### Active Implementation Files
+- `src/working-sse-server.cjs` — Main SSE server with MCP protocol + all 25 tools
+- `src/sdp-api-client-v2.cjs` — SDP API client (requests, assets, changes, solutions, attachments, email, advanced search)
+- `src/sdp-oauth-client.cjs` — OAuth singleton with global refresh lock
+- `src/sdp-api-metadata.cjs` — Metadata (priorities, statuses, categories)
+- `src/sdp-api-users.cjs` — Users/technicians module (stubs for missing endpoint)
+- `src/utils/error-logger.cjs` — Structured API error logging
 
-### File Organization (Future TypeScript Migration)
+### File Organization
 - **Never** create source files longer than 500 lines
 - **Split** large modules into smaller, focused files
-- **Use** CommonJS (.cjs) for now to avoid ES module conflicts
+- **Use** CommonJS (.cjs) to avoid ES module conflicts
 
 ### Import Conventions
-Current implementation uses CommonJS:
 ```javascript
 const express = require('express');
 const { SDPAPIClientV2 } = require('./sdp-api-client-v2.cjs');
@@ -372,407 +309,183 @@ const { SDPAPIClientV2 } = require('./sdp-api-client-v2.cjs');
 ## 🧪 Testing & Reliability
 
 ### Mock API Server
-A mock Service Desk Plus API server is available for testing without affecting real data:
-
-**Starting Mock Server**:
 ```bash
-# Start both mock API and SSE server
-./start-mock-server.sh
-
-# Or start mock API only
-npm run mock:api
+npm run mock:api   # Runs on port 3457
 ```
 
-**Mock API Features**:
-- Runs on port 3457 (configurable via MOCK_SDP_PORT)
-- Mimics exact error responses from real API
-- Enforces same business rules (can't update closed tickets)
-- All mock data has `is_mock: true` identifier
-- Includes pre-created test tickets
-
-**Using Mock API**:
 ```bash
-# Set environment variable
-export SDP_USE_MOCK_API=true
-export SDP_BASE_URL=http://localhost:3457
-
-# Start SSE server (will use mock API)
-./start-sse-server.sh
+# In .env to use mock:
+SDP_USE_MOCK_API=true
+SDP_BASE_URL=http://localhost:3457
 ```
-
-**Mock Endpoints**:
-- Same as real API: `/app/itdesk/api/v3/*`
-- Returns mock tickets with IDs like `MOCK-216826000006430001`
-- Maintains state during session (creates/updates persist)
 
 ### Test Requirements
-- **Create** Jest unit tests for all new API modules
-- **Place** tests in `/tests` mirroring the source structure
-- **Include** at minimum:
-  - Happy path tests (expected use cases)
-  - Error handling tests (API errors, network failures)
-  - Edge case tests (empty responses, malformed data)
-  - Authentication tests (token refresh, expiry)
-
-### Test Patterns
-```typescript
-describe('RequestsAPI', () => {
-  describe('create', () => {
-    it('should create a request successfully', async () => {
-      // Test implementation
-    });
-    
-    it('should handle validation errors', async () => {
-      // Test implementation
-    });
-    
-    it('should retry on rate limit', async () => {
-      // Test implementation
-    });
-  });
-});
-```
+- Create Jest unit tests for all new modules in `/tests/`
+- Minimum: happy path, error handling, edge cases, authentication
 
 ## ✅ Task Management
 
-- **Update** `TASK.md` with:
-  - Current task status (mark as ✅ when complete)
-  - New sub-tasks discovered during implementation
-  - Blockers or issues encountered
-- **Never** delete completed tasks, only mark them as done
+- **Update** `DEVELOPMENT_PLAN.md` with current task status
+- **Never** delete completed tasks, only mark them done
 - **Add** timestamps when updating task status
 
 ## 📎 Style & Conventions
 
-### TypeScript Guidelines
-- **Use** TypeScript strict mode (already configured)
-- **Define** explicit types for all function parameters and returns
-- **Create** interfaces for all API responses
-- **Use** Zod schemas for runtime validation in MCP tools
-- **Prefer** type over interface for unions and utility types
-
 ### Code Style
-- **Follow** ESLint configuration (run `npm run lint`)
-- **Use** Prettier for formatting (run `npm run format`)
-- **Name** files in kebab-case: `request-utils.ts`
-- **Name** classes/interfaces in PascalCase: `RequestsAPI`, `SDPError`
-- **Name** functions/variables in camelCase: `createRequest`, `rateLimiter`
+- **Follow** ESLint configuration (`npm run lint`)
+- **Use** Prettier for formatting (`npm run format`)
+- **Name** files in kebab-case: `request-utils.cjs`
+- **Name** classes in PascalCase: `SDPAPIClientV2`
+- **Name** functions/variables in camelCase: `createRequest`
 
 ### Error Handling
-- **Use** custom error classes from `src/utils/errors.ts`
 - **Provide** meaningful error messages with context
 - **Include** error codes for different scenarios
 - **Handle** rate limiting with exponential backoff
 
-## 📚 Documentation & Explainability
+## 🔐 Security Practices
 
-### Code Documentation
-- **Write** JSDoc comments for all public functions
-- **Include** parameter descriptions and return types
-- **Add** usage examples for complex functions
+- **Never** hardcode credentials or tokens
+- **Never** commit `.env`, `.sdp-tokens.json`, or `api-errors.log`
+- **Use** environment variables for all configuration
+- **Validate** all user inputs
+- **Sanitize** data before sending to API
+- **Log** security-relevant events without exposing token values
 
-Example:
-```typescript
-/**
- * Create a new service request in Service Desk Plus
- * @param data - Request creation data
- * @returns The created request object
- * @throws {SDPValidationError} If required fields are missing
- * @throws {SDPAuthError} If authentication fails
- * @example
- * const request = await client.requests.create({
- *   subject: 'New laptop request',
- *   requester: { email: 'user@example.com' }
- * });
- */
+## 🚀 Development Workflow
+
+1. **Navigate** to project: `cd C:\SDP-MCP\SDP-MCP-fork\sdp-mcp-server\`
+2. **Consult** `example/knowledge/` for relevant API documentation
+3. **Review** API endpoints section in this document
+4. **Verify** at https://www.manageengine.com/products/service-desk/sdpod-v3-api/ if needed
+5. **Edit** CommonJS files (.cjs) in `src/`
+6. **Test** by running: `node src/working-sse-server.cjs`
+7. **Monitor** logs in the terminal
+
+## 📦 Dependencies
+
+### Core Runtime
+- `express` — Web server for SSE endpoint
+- `axios` — HTTP client for SDP API calls
+- `dotenv` — Environment variable loading (**must** call `require('dotenv').config()` at top of entry file)
+- `cors` — Cross-origin resource sharing
+
+### When Adding Dependencies
+- Verify the package is actively maintained
+- Check license compatibility (prefer MIT/Apache)
+- Document why the dependency is needed
+
+## 🗄️ Database Integration (Future Enhancement)
+
+Database integration is planned for future multi-tenant support. The current implementation caches OAuth tokens in `.sdp-tokens.json` (local only, in `.gitignore`) and reads credentials from environment variables.
+
+### Environment Variables
+```bash
+# Service Desk Plus Configuration
+SDP_BASE_URL=https://sc.burtonmi.gov
+SDP_INSTANCE_NAME=766116682
+SDP_PORTAL_NAME=burtonmi
+SDP_DATA_CENTER=US
+
+# OAuth Configuration (from Zoho self-client)
+SDP_CLIENT_ID=your-client-id
+SDP_CLIENT_SECRET=your-client-secret
+SDP_OAUTH_REFRESH_TOKEN=your-permanent-refresh-token
+
+# Server Configuration
+SDP_HTTP_HOST=0.0.0.0
+SDP_HTTP_PORT=3456
 ```
-
-### Inline Comments
-- **Add** `// Reason:` comments for non-obvious logic
-- **Explain** rate limiting delays
-- **Document** OAuth token refresh logic
-- **Clarify** any Service Desk Plus API quirks
-
-### Documentation Updates
-- **Update** `API_REFERENCE.md` when adding new API methods
-- **Update** `MCP_TOOLS.md` when adding new MCP tools
-- **Keep** examples current and functional
 
 ## 🧠 AI Behavior Rules
 
 ### Code Generation
 - **Always** check `example/knowledge/` folder before implementing API features
-- **Reference** code examples from knowledge base when available
 - **Never** assume a library is available without checking `package.json`
-- **Never** hallucinate API endpoints - refer to SDP documentation and knowledge base
+- **Never** hallucinate API endpoints — refer to SDP documentation and knowledge base
 - **Always** check if a file exists before reading/modifying
 - **Never** delete existing code unless explicitly instructed
+- **Never** hardcode credentials — always use environment variables
 
 ### API Integration
-- **ALWAYS CHECK** `example/knowledge/` folder BEFORE implementing any API calls
-- **REFERENCE** the API endpoints section above for correct URLs and methods
+- **ALWAYS CHECK** `example/knowledge/` BEFORE implementing any API calls
 - **VERIFY** endpoints at https://www.manageengine.com/products/service-desk/sdpod-v3-api/
-- **Use** documented endpoints and patterns from knowledge base
-- **Respect** rate limits (configured in environment)
-- **Handle** pagination for list operations
-- **Validate** OAuth scopes match required operations (see scope documentation)
-- **Test** against documented API responses
 - **Remember** common operations:
   - Create: `POST /api/v3/{module}`
   - Read: `GET /api/v3/{module}/{id}`
   - Update: `PUT /api/v3/{module}/{id}`
   - Delete: `DELETE /api/v3/{module}/{id}`
-  - Close Request: `POST /api/v3/requests/{id}/close`
-- **Research** do not assume anything about the api - always verify at https://www.manageengine.com/products/service-desk/sdpod-v3-api/
+  - Notes: `POST /api/v3/requests/{id}/notes`
+- **Research** — do not assume anything about the API; always verify at the docs portal
 
 ### MCP Tool Development
-- **Define** clear, descriptive tool names that map to API operations
-- **Create** comprehensive Zod schemas with descriptions
+- **Define** clear, descriptive tool names mapping to API operations
+- **Create** comprehensive input schemas with descriptions
 - **Implement** proper error messages for users
-- **Consider** partial updates vs full replacements
-- **Map** tools to API endpoints:
-  - `create_request` → `POST /api/v3/requests`
-  - `update_request` → `PUT /api/v3/requests/{id}`
-  - `close_request` → `POST /api/v3/requests/{id}/close`
-  - `get_request` → `GET /api/v3/requests/{id}`
-  - `list_requests` → `GET /api/v3/requests`
-  - Similar patterns for problems, changes, projects, assets
 - **Validate** required OAuth scopes for each tool
-- **Research** MCP is a new technology do not rely on your training data alone use web search to research client and server standards. This project uses SSE.
+- **Research** — MCP is evolving; use web search for current client/server standards
 
-## 🔐 Security Practices
+## 📖 Documentation & Explainability
 
-### General Security
-- **Never** hardcode credentials or tokens
-- **Use** environment variables for all configuration
-- **Validate** all user inputs with Zod schemas
-- **Sanitize** data before sending to API
-- **Log** security-relevant events (auth failures, permission errors)
+### Inline Comments
+- Add `// Reason:` comments for non-obvious logic
+- Explain rate limiting delays
+- Document OAuth token refresh logic
+- Clarify any SDP API quirks
 
-### Current Security Implementation
-- **Environment Variables**: OAuth tokens stored securely in .env file
-- **HTTPS Required**: Use HTTPS in production (HTTP allowed for local dev)
-- **Token Refresh**: Automatic refresh of access tokens
-- **Rate Limiting**: Respects Service Desk Plus API rate limits
-- **Error Handling**: Graceful handling of auth failures
-
-### Future Multi-Tenant Security
-- **Isolate** tenant data completely - no cross-tenant access
-- **Encrypt** OAuth tokens with per-tenant derived keys
-- **Validate** client certificates match tenant ID
-- **Implement** tenant-specific rate limiting
-- **Audit** all tenant operations with full context
-- **Monitor** for scope escalation attempts
-
-### Penetration Test Readiness
-- **Follow** all guidelines in `example/knowledge/mcp-security-best-practices.md`
-- **Implement** defense in depth with multiple security layers
-- **Use** modern authentication (OAuth 2.1, JWT with short expiry)
-- **Enable** comprehensive audit logging
-- **Test** for OWASP Top 10 vulnerabilities
-
-Refer to security documentation for implementation details.
-
-## 🚀 Development Workflow
-
-**IMPORTANT**: All new development happens in `/Users/kalten/projects/SDP-MCP/sdp-mcp-server/`
-
-### Current Workflow (Single-Tenant SSE Server)
-1. **Navigate** to the project directory: `cd /Users/kalten/projects/SDP-MCP/sdp-mcp-server/`
-2. **Consult** `example/knowledge/` folder for relevant API documentation
-3. **Review** API endpoints section in this document
-4. **Check** Service Desk Plus API docs if needed: https://www.manageengine.com/products/service-desk/sdpod-v3-api/
-5. **Edit** CommonJS files (.cjs) in src/ directory
-6. **Test** by running the SSE server: `./start-sse-server.sh`
-7. **Monitor** logs: `tail -f server.log`
-8. **Update** documentation if discovering new API behaviors
-
-### Future TypeScript Workflow
-1. **Implement** features following TypeScript patterns
-2. **Validate** OAuth scopes for each operation
-3. **Test** with appropriate context
-4. **Run** tests with `npm test`
-5. **Lint** code with `npm run lint`
-6. **Build** project with `npm run build`
-
-## 📦 Dependencies
-
-### When Adding Dependencies
-- **Verify** the package is actively maintained
-- **Check** license compatibility (prefer MIT/Apache)
-- **Use** exact versions in package.json
-- **Document** why the dependency is needed
-
-### Core Dependencies to Know
-- `express` - Web server for SSE endpoint
-- `axios` - HTTP client for SDP API calls
-- `dotenv` - Environment variable management
-- `cors` - Cross-origin resource sharing
-
-### Future Dependencies (TypeScript Migration)
-- `@modelcontextprotocol/sdk` - MCP server implementation (currently not used)
-- `zod` - Runtime type validation
-- `typescript` - Type safety
+### Documentation Updates
+- Update `MCP_TOOLS.md` when adding new MCP tools
+- Update `DEVELOPMENT_PLAN.md` when completing milestones
 
 ## 🔄 Git Practices
 
-- **Write** clear, descriptive commit messages
-- **Reference** issue/task numbers in commits
-- **Keep** commits focused on single changes
-- **Update** .gitignore for new ignore patterns, the main page should contain a summary of recent changes
-
-## 🗄️ Database Integration (Future Enhancement)
-
-### PostgreSQL Configuration (Not Currently Used)
-The current implementation stores OAuth tokens in environment variables. Database integration is planned for future multi-tenant support:
-
-- **PostgreSQL** chosen for future production use
-- **Docker** container configuration prepared
-- **Port**: 5433 (non-standard to avoid conflicts)
-- **Database**: sdp_mcp
-
-### Planned Database Features
-1. **Multi-Tenant Token Storage** (Future)
-   - OAuth tokens stored per tenant with encryption
-   - Self-client credentials encrypted at rest
-   - Automatic token refresh per tenant from database
-   - Tenant isolation at database level
-
-2. **Audit Logging** (Future)
-   - All API calls logged with context
-   - Performance metrics tracking
-   - Error tracking and analysis
-   - Compliance-ready audit trails
-
-3. **Change Tracking** (Future)
-   - All MCP tool operations tracked
-   - Rollback capability
-   - Entity history maintained
-   - Analytics and reporting
-
-### Connection Details
-- Host: localhost 
-- Port: 5433 (non-standard to avoid conflicts)
-- Database: sdp_mcp
-- User: sdpmcpservice
-- Password: *jDE1Bj%IPXKMe%Z
-- Root user: root / 16vOp$BeC!&9SCqv
-
-### Environment Variables
-```bash
-# Service Desk Plus Configuration
-SDP_BASE_URL=https://helpdesk.pttg.com   # Custom domain
-SDP_INSTANCE_NAME=itdesk                 # Instance name
-SDP_PORTAL_NAME=kaltentech               # Portal name
-SDP_DATA_CENTER=US                       # Data center location
-
-# OAuth Configuration
-SDP_OAUTH_CLIENT_ID=your_client_id
-SDP_OAUTH_CLIENT_SECRET=your_client_secret_here
-SDP_OAUTH_REFRESH_TOKEN=your_permanent_refresh_token_here
-
-# Database connection
-SDP_DB_HOST=localhost
-SDP_DB_PORT=5433
-SDP_DB_NAME=sdp_mcp
-SDP_DB_USER=sdpmcpservice
-SDP_DB_PASSWORD=your_db_password_here
-
-# Feature flags
-SDP_USE_DB_TOKENS=true      # Enable persistent token storage
-SDP_USE_AUDIT_LOG=true      # Enable API audit logging
-SDP_USE_CHANGE_TRACKING=true # Enable change tracking
-
-# Server Configuration
-SDP_HTTP_HOST=0.0.0.0       # Listen on all interfaces
-SDP_HTTP_PORT=3456          # MCP server port
-```
-
-### Testing Database
-- Run `node scripts/test-db.js` to verify database connectivity
-- Check logs with `docker logs sdp-mcp-postgres`
-- Access PostgreSQL: `docker exec -it sdp-mcp-postgres psql -U sdpmcpservice -d sdp_mcp`
-
-## 📖 Knowledge Base Maintenance
-
-### Adding New Documentation
-When discovering new API behaviors or implementing new features:
-
-1. **Create** appropriate documentation in `example/knowledge/`
-2. **Follow** the documentation standards outlined above
-3. **Include** working code examples tested against the actual API
-4. **Update** this CLAUDE.md file if new patterns emerge
-5. **Cross-reference** with existing documentation
-
-### Using Knowledge Base
-- **Start** every implementation by checking relevant knowledge documents
-- **Prefer** documented patterns over assumptions
-- **Validate** against real API responses
-- **Update** documentation when finding discrepancies
+- Write clear, descriptive commit messages
+- Keep commits focused on single changes
+- **Never** commit: `.env`, `.sdp-tokens.json`, `api-errors.log`, `node_modules/`
 
 ## 🚀 Quick Reference
 
-### Common MCP Tool Patterns
-```typescript
-// Create operations
-async function create_request(args: CreateRequestArgs) {
-  // 1. Validate OAuth scope: SDPOnDemand.requests.CREATE
-  // 2. Call POST /api/v3/requests
-  // 3. Return created request details
-}
+### Available MCP Tools (25 total)
+See `sdp-mcp-server/MCP_TOOLS.md` for full documentation.
 
-// Update operations  
-async function update_request(args: UpdateRequestArgs) {
-  // 1. Validate OAuth scope: SDPOnDemand.requests.UPDATE
-  // 2. Call PUT /api/v3/requests/{id}
-  // 3. Return updated request details
-}
+**Request Management** (7): `list_requests`, `get_request`, `create_request`, `update_request`, `close_request`, `search_requests`, `add_note`
 
-// Close operations (requests only)
-async function close_request(args: CloseRequestArgs) {
-  // 1. Validate OAuth scope: SDPOnDemand.requests.UPDATE
-  // 2. Call POST /api/v3/requests/{id}/close
-  // 3. Include closure_code, closure_comments
-}
+**Email / Conversation** (4): `reply_to_requester`, `add_private_note`, `send_first_response`, `get_request_conversation`
 
-// Query operations
-async function list_requests(args: ListRequestsArgs) {
-  // 1. Validate OAuth scope: SDPOnDemand.requests.READ
-  // 2. Call GET /api/v3/requests with filters
-  // 3. Handle pagination if needed
-}
-```
+**Technicians** (3, stubs): `list_technicians`, `get_technician`, `find_technician`
 
-### Essential References
-- **Knowledge Base**: `example/knowledge/` - ALWAYS CHECK FIRST!
-- **OAuth Scopes**: `example/knowledge/service-desk-plus-oauth-scopes.md`
-- **Multi-Tenant**: `example/knowledge/multi-user-mcp-architecture.md`
-- **API Docs**: https://www.manageengine.com/products/service-desk/sdpod-v3-api/
-- **Project Docs**:
-  - `DEVELOPMENT_PLAN.md` - Project roadmap and status
-  - `QUICK_START.md` - User onboarding guide
-  - `docs/MULTI_USER_SETUP.md` - Multi-user architecture
-  - `docs/OAUTH_SETUP_GUIDE.md` - OAuth setup details
+**Assets** (3): `list_assets`, `get_asset`, `search_assets`
 
-### Critical Configuration
-- **Custom Domain**: `https://helpdesk.pttg.com` (NOT sdpondemand.manageengine.com)
-- **Instance Name**: `itdesk`
-- **API Path**: `https://helpdesk.pttg.com/app/itdesk/api/v3`
-- **OAuth Tokens**: Permanent refresh tokens (never expire!)
+**Changes** (4): `list_changes`, `get_change`, `create_change`, `update_change`
+
+**Solutions** (4): `list_solutions`, `get_solution`, `search_solutions`, `create_solution`
+
+**Attachments** (1): `get_attachments`
+
+**Utilities** (2): `get_metadata`, `claude_code_command`
+
+### Critical Configuration (City of Burton IT)
+- **Base URL**: `https://sc.burtonmi.gov`
+- **Instance Name**: `766116682`
+- **API Path**: `https://sc.burtonmi.gov/app/766116682/api/v3`
+- **Portal Name**: `burtonmi`
+- **Client ID env var**: `SDP_CLIENT_ID`
+- **Client Secret env var**: `SDP_CLIENT_SECRET`
+- **Refresh Token env var**: `SDP_OAUTH_REFRESH_TOKEN`
 
 ### Remember
 1. This is for Service Desk Plus **CLOUD** (not on-premises)
 2. Current implementation is **single-tenant** (multi-tenant deferred)
-3. OAuth refresh tokens are **permanent** - one-time setup only
-4. Working SSE server on port **3456**
-5. Use custom domain configuration for API calls
-6. Check documentation before implementing
-7. Server accessible at: studio, studio.pttg.loc, 192.168.2.10, 10.212.0.7, localhost
+3. OAuth refresh tokens are **permanent** — one-time setup only
+4. Server runs on port **3456**
+5. Use `https://sc.burtonmi.gov` as the custom domain
+6. Check `example/knowledge/` before implementing anything
+7. Never hardcode credentials — use `.env`
 
 ### Current Working Implementation
 - **Server**: `src/working-sse-server.cjs`
-- **Client**: `src/sdp-api-client-v2.cjs`
-- **Start**: `./start-sse-server.sh`
-- **Test**: Client successfully connected and all tools working
-
-Remember: The goal is to create a robust, maintainable, and well-documented Service Desk Plus Cloud API integration that serves both programmatic use and AI assistant interactions effectively. The knowledge base in `example/knowledge/` is your primary reference for all API implementations.
+- **API Client**: `src/sdp-api-client-v2.cjs`
+- **OAuth**: `src/sdp-oauth-client.cjs`
+- **Metadata**: `src/sdp-api-metadata.cjs`
+- **Start**: `node src/working-sse-server.cjs`
+- **Health check**: `curl http://localhost:3456/health`

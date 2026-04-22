@@ -55,6 +55,10 @@ temp/
 *.pfx
 .secrets/
 
+# OAuth token cache (contains live credentials - never commit)
+.sdp-tokens.json
+api-errors.log
+
 # Database
 *.sqlite
 *.sqlite3

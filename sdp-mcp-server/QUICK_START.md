@@ -1,18 +1,19 @@
-# Quick Start Guide - Service Desk Plus MCP Server
+# Quick Start Guide — Service Desk Plus MCP Server
+# City of Burton IT
 
 Get connected to the Service Desk Plus MCP server in under 10 minutes!
 
 ## Prerequisites
 
-- Service Desk Plus OAuth credentials (Client ID & Secret)
-- Access to the MCP server (network connectivity on port 3456)
-- MCP-compatible client (Claude Desktop, VS Code, etc.)
+- Service Desk Plus OAuth credentials (Client ID & Secret from Zoho self-client)
+- Network access to the MCP server on port 3456
+- MCP-compatible client (Claude Desktop, VS Code with Copilot, etc.)
 
-## For Remote Users - Quick Connection
+## For Remote Users — Quick Connection
 
 ### Step 1: Get Your Credentials
 1. Create a Self-Client at [Zoho API Console](https://api-console.zoho.com/)
-2. Save your Client ID and Secret
+2. Save your Client ID and Client Secret
 3. Generate authorization code with ALL scopes (see below)
 
 ### Step 2: Send to Administrator
@@ -26,8 +27,8 @@ Send these to your MCP administrator:
 {
   "mcpServers": {
     "service-desk-plus": {
-      "type": "sse",
-      "url": "http://studio:3456/sse",
+      "command": "npx",
+      "args": ["mcp-remote", "http://YOUR-SERVER-IP:3456/sse", "--allow-http"],
       "env": {
         "SDP_CLIENT_ID": "your_client_id",
         "SDP_CLIENT_SECRET": "your_client_secret"
@@ -48,7 +49,7 @@ Restart your MCP client and start using Service Desk Plus tools.
 - ✅ Tokens work forever (unless manually revoked)
 - ✅ Access tokens (1-hour) are refreshed automatically
 
-## For Administrators - Setup Process
+## For Administrators — Setup Process
 
 ### 1. OAuth Setup (One-Time Per User)
 
@@ -57,11 +58,6 @@ When a user sends you their authorization code:
 ```bash
 # Exchange authorization code for permanent refresh token
 node scripts/exchange-code.js
-
-# The script will:
-# 1. Exchange the code for tokens
-# 2. Display the refresh token
-# 3. Save it to .env file
 ```
 
 ### 2. Test API Connection
@@ -78,100 +74,97 @@ You should see:
 
 ### 3. Required OAuth Scopes
 
-When generating authorization codes, use these scopes:
 ```
 SDPOnDemand.requests.ALL,SDPOnDemand.problems.ALL,SDPOnDemand.changes.ALL,SDPOnDemand.projects.ALL,SDPOnDemand.assets.ALL,SDPOnDemand.solutions.ALL,SDPOnDemand.setup.READ,SDPOnDemand.general.ALL
 ```
 
-### 4. Server Endpoints
-
-The MCP server listens on multiple addresses:
-- `studio` - Primary hostname
-- `studio.pttg.loc` - FQDN
-- `192.168.2.10` - LAN IP
-- `10.212.0.7` - Secondary IP
-- `localhost` / `127.0.0.1` - Local only
-
-## Environment Configuration
-
-### Critical Settings for Custom Domain
+### 4. Server Configuration
 
 ```env
-# Service Desk Plus Configuration
-SDP_BASE_URL=https://helpdesk.pttg.com
-SDP_INSTANCE_NAME=itdesk
-SDP_PORTAL_NAME=kaltentech
+# Service Desk Plus (City of Burton IT)
+SDP_BASE_URL=https://sc.burtonmi.gov
+SDP_INSTANCE_NAME=766116682
+SDP_PORTAL_NAME=burtonmi
 SDP_DATA_CENTER=US
 
-# OAuth Configuration (from Zoho)
-SDP_OAUTH_CLIENT_ID=your_client_id
-SDP_OAUTH_CLIENT_SECRET=your_client_secret
+# OAuth (from Zoho self-client)
+SDP_CLIENT_ID=your_client_id
+SDP_CLIENT_SECRET=your_client_secret
 SDP_OAUTH_REFRESH_TOKEN=your_permanent_refresh_token
 
-# Server Configuration
+# Server
 SDP_HTTP_HOST=0.0.0.0
 SDP_HTTP_PORT=3456
 ```
 
-## Available MCP Tools
-
-Once connected, these tools are available:
+## Available MCP Tools (25 total)
 
 ### Request Management
-- `list_requests` - Get service requests
-- `create_request` - Create new request
-- `update_request` - Update existing request
-- `close_request` - Close a request
-- `get_request` - Get request details
+- `list_requests` — Get service requests with filters
+- `create_request` — Create new request
+- `update_request` — Update existing request
+- `close_request` — Close a request
+- `get_request` — Get request details
+- `search_requests` — Search by keyword
+- `add_note` — Add a public note/comment
 
-### Problem Management
-- `list_problems` - Get problem records
-- `create_problem` - Create new problem
-- `update_problem` - Update problem
-- `get_problem` - Get problem details
+### Email & Conversation
+- `reply_to_requester` — Send email reply to requester
+- `add_private_note` — Add private note (not visible to requester)
+- `send_first_response` — Send first response with email notification
+- `get_request_conversation` — Get full conversation/notes history
+
+### Asset Management
+- `list_assets` — List IT assets
+- `get_asset` — Get asset details
+- `search_assets` — Search assets by name or tag
 
 ### Change Management
-- `list_changes` - Get change requests
-- `create_change` - Create new change
-- `update_change` - Update change
-- `get_change` - Get change details
+- `list_changes` — List change requests
+- `get_change` — Get change details
+- `create_change` — Create new change request
+- `update_change` — Update a change request
 
-### And more for Projects, Assets, Solutions...
+### Knowledge Base (Solutions)
+- `list_solutions` — List knowledge base articles
+- `get_solution` — Get a specific article
+- `search_solutions` — Search articles by keyword
+- `create_solution` — Create a new article
+
+### Attachments
+- `get_attachments` — Get attachments for a request
+
+### Utilities
+- `get_metadata` — Get valid field values (priorities, statuses, categories)
+- `claude_code_command` — Claude Code integration helper
 
 ## Troubleshooting
 
 ### API Returns "UNAUTHORISED"
-- Verify custom domain is correct
-- Check instance name matches
+- Verify custom domain is correct: `https://sc.burtonmi.gov`
+- Check instance name: `766116682`
 - Ensure OAuth token has required scopes
 
 ### "Invalid refresh token"
 - Token may have been revoked
 - Generate new authorization code
-- Exchange for new refresh token
+- Exchange for new refresh token using `scripts/exchange-code.js`
 
 ### Connection Issues
-- Verify server is running on port 3456
-- Check firewall allows connection
-- Test with curl: `curl http://studio:3456/health`
+- Verify server is running: `curl http://localhost:3456/health`
+- Check firewall allows port 3456
 
 ## Quick Test Commands
 
 After setup, try these in your MCP client:
 
-1. **List recent requests**:
-   "Show me the last 5 service requests"
-
-2. **Create a request**:
-   "Create a service request for laptop replacement"
-
-3. **Check permissions**:
-   "What SDP tools are available?"
+1. **List recent requests**: "Show me the last 5 service requests"
+2. **Create a request**: "Create a service request for printer not working"
+3. **Check tools**: "What SDP tools are available?"
+4. **Get metadata**: "What priority values are available in SDP?"
 
 ## Support
 
-- **Setup Guide**: [MULTI_USER_SETUP.md](./docs/MULTI_USER_SETUP.md)
-- **OAuth Details**: [OAUTH_SETUP_GUIDE.md](./docs/OAUTH_SETUP_GUIDE.md)
-- **Admin Contact**: Your MCP server administrator
-
-Remember: Once set up, you'll never need to authenticate again! 🎉
+- **Setup Guide**: `docs/OAUTH_SETUP.md`
+- **Full Tool Reference**: `MCP_TOOLS.md`
+- **Architecture**: `docs/MULTI_USER_SETUP.md`
