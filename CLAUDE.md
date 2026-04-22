@@ -37,13 +37,6 @@ The project uses a **single-tenant** SSE server implementation:
 - **Token Caching**: Reuses valid tokens until expiry
 - **Error Handling**: Only refreshes on actual authentication failures
 
-### Future Multi-Tenant Architecture (Deferred)
-Multi-tenant support is planned when MCP protocol evolves to better support it:
-- Multiple clients connecting to a single MCP server
-- Each client with their own self-client certificate
-- Complete token isolation per tenant
-- Per-tenant rate limiting and monitoring
-
 **Important**: This is for Service Desk Plus **Cloud** (SDPOnDemand), not on-premises.
 
 ### 🔑 Critical OAuth Information
@@ -79,7 +72,6 @@ The MCP server runs on port 3456. Configure clients to use the appropriate addre
 - **Reference** key documentation files:
   - `service-desk-plus-authentication.md` — OAuth implementation and data center endpoints
   - `service-desk-plus-sse-implementation.md` — Working SSE server implementation details
-  - `multi-user-mcp-architecture.md` — Multi-tenant architecture (future reference)
   - `service-desk-plus-oauth-scopes.md` — Complete scope reference and permissions
   - `mcp-server-architecture.md` — Server implementation patterns
   - `mcp-security-best-practices.md` — Security guidelines
@@ -99,7 +91,6 @@ sdp-mcp-server/                   # Main project directory
 │   ├── utils/
 │   │   └── error-logger.cjs     # Structured API error logging
 │   ├── server/                   # Future MCP server implementation
-│   ├── tenants/                  # Future multi-tenant management
 │   ├── auth/                     # Authentication layer (TypeScript)
 │   ├── sdp/                      # Service Desk Plus integration (TypeScript)
 │   ├── tools/                    # MCP tool implementations (future)
@@ -239,17 +230,10 @@ When adding new documentation to `example/knowledge/`:
 
 ## 🏢 Architecture Notes
 
-### Current Single-Tenant Implementation
-Production server uses a single-tenant architecture:
+### Single-Tenant Implementation
 - OAuth tokens configured via environment variables
 - One server instance for the organization
-- Simple and reliable for current MCP limitations
-
-### Future Multi-Tenant Architecture (Deferred)
-When MCP protocol evolves to support stateless connections:
-- **Self-Client**: Each tenant uses their own SDP self-client OAuth app
-- **Tenant Isolation**: Complete separation of tokens, data, and rate limits
-- **Scope-Based Access**: Tools restricted based on OAuth scopes per tenant
+- Direct MCP JSON-RPC 2.0 over SSE — no SDK dependency
 
 ## 🚀 Current Implementation Status
 
@@ -375,11 +359,7 @@ SDP_BASE_URL=http://localhost:3457
 - Check license compatibility (prefer MIT/Apache)
 - Document why the dependency is needed
 
-## 🗄️ Database Integration (Future Enhancement)
-
-Database integration is planned for future multi-tenant support. The current implementation caches OAuth tokens in `.sdp-tokens.json` (local only, in `.gitignore`) and reads credentials from environment variables.
-
-### Environment Variables
+## 🗄️ Environment Variables
 ```bash
 # Service Desk Plus Configuration
 SDP_BASE_URL=https://sc.burtonmi.gov
@@ -475,8 +455,7 @@ See `sdp-mcp-server/MCP_TOOLS.md` for full documentation.
 
 ### Remember
 1. This is for Service Desk Plus **CLOUD** (not on-premises)
-2. Current implementation is **single-tenant** (multi-tenant deferred)
-3. OAuth refresh tokens are **permanent** — one-time setup only
+2. OAuth refresh tokens are **permanent** — one-time setup only
 4. Server runs on port **3456**
 5. Use `https://sc.burtonmi.gov` as the custom domain
 6. Check `example/knowledge/` before implementing anything
