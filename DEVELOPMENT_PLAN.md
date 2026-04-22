@@ -105,18 +105,6 @@ Tools to add:
 
 ---
 
-### Deferred — Multi-Tenant Support
-Waiting on MCP protocol to better support stateless or multi-client connections.
-
-When ready:
-- PostgreSQL for encrypted per-tenant token storage
-- Per-tenant OAuth credential isolation
-- Per-tenant rate limiting
-- Scope-based tool access control
-- Tenant onboarding scripts
-
----
-
 ## Configuration Reference
 
 ```bash
