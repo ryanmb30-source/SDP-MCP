@@ -7,6 +7,9 @@ const axios = require('axios');
 const { SDPOAuthClient } = require('./sdp-oauth-client.cjs');
 const { SDPMetadataClient } = require('./sdp-api-metadata.cjs');
 const { SDPUsersAPI } = require('./sdp-api-users.cjs');
+const { SDPProblemsAPI } = require('./sdp-api-problems.cjs');
+const { SDPCmdbAPI } = require('./sdp-api-cmdb.cjs');
+const { SDPMaintenanceAPI } = require('./sdp-api-maintenance.cjs');
 const errorLogger = require('./utils/error-logger.cjs');
 
 class SDPAPIClientV2 {
@@ -194,9 +197,12 @@ class SDPAPIClientV2 {
     
     // Initialize metadata on first use
     this.metadataInitialized = false;
-    
-    // Initialize users API
+
+    // Initialize sub-module APIs
     this.users = new SDPUsersAPI(this.client, this.metadata);
+    this.problems = new SDPProblemsAPI(this.client);
+    this.cmdb = new SDPCmdbAPI(this.client);
+    this.maintenance = new SDPMaintenanceAPI(this.client);
   }
   
   /**
@@ -488,11 +494,23 @@ class SDPAPIClientV2 {
     if (site) {
       request.site = typeof site === 'string' ? { name: site } : site;
     }
-    
+
     if (group) {
       request.group = typeof group === 'string' ? { name: group } : group;
     }
-    
+
+    if (urgency) {
+      request.urgency = { name: urgency };
+    }
+
+    if (impact) {
+      request.impact = { name: impact };
+    }
+
+    if (requestData.on_behalf_of) {
+      request.on_behalf_of = { email_id: requestData.on_behalf_of };
+    }
+
     if (service_category) {
       request.service_category = typeof service_category === 'string' ? { name: service_category } : service_category;
     }
@@ -1385,6 +1403,104 @@ class SDPAPIClientV2 {
   async getRequestAttachments(requestId) {
     const response = await this.client.get('/requests/' + requestId + '/attachments');
     return response.data.attachments || [];
+  }
+
+  // PROBLEMS — pass-through to SDPProblemsAPI
+  async listProblems(options) { return this.problems.listProblems(options); }
+  async getProblem(id) { return this.problems.getProblem(id); }
+  async createProblem(data) { return this.problems.createProblem(data); }
+  async updateProblem(id, updates) { return this.problems.updateProblem(id, updates); }
+  async closeProblem(id, comments) { return this.problems.closeProblem(id, comments); }
+
+  // CMDB — pass-through to SDPCmdbAPI
+  async listCIs(options) { return this.cmdb.listCIs(options); }
+  async getCI(id) { return this.cmdb.getCI(id); }
+  async searchCIs(query, options) { return this.cmdb.searchCIs(query, options); }
+  async createCI(data) { return this.cmdb.createCI(data); }
+  async updateCI(id, updates) { return this.cmdb.updateCI(id, updates); }
+  async getCIRelationships(id) { return this.cmdb.getCIRelationships(id); }
+  async addCIRelationship(id, relatedId, type) { return this.cmdb.addCIRelationship(id, relatedId, type); }
+
+  // MAINTENANCE WINDOWS — pass-through to SDPMaintenanceAPI
+  async listMaintenanceWindows(options) { return this.maintenance.listMaintenanceWindows(options); }
+  async getMaintenanceWindow(id) { return this.maintenance.getMaintenanceWindow(id); }
+  async createMaintenanceWindow(data) { return this.maintenance.createMaintenanceWindow(data); }
+  async updateMaintenanceWindow(id, updates) { return this.maintenance.updateMaintenanceWindow(id, updates); }
+
+  // REQUEST TASKS
+  async getRequestTasks(requestId) {
+    const response = await this.client.get('/requests/' + requestId + '/tasks');
+    return response.data.tasks || [];
+  }
+
+  async addRequestTask(requestId, taskData) {
+    const task = { title: taskData.title };
+    if (taskData.description) task.description = taskData.description;
+    if (taskData.assigned_to_email) task.owner = { email_id: taskData.assigned_to_email };
+    if (taskData.due_date) task.due_date = { value: taskData.due_date };
+    const params = { input_data: JSON.stringify({ task }) };
+    const response = await this.client.post('/requests/' + requestId + '/tasks', null, { params });
+    return response.data.task;
+  }
+
+  async updateRequestTask(requestId, taskId, updates) {
+    const task = {};
+    if (updates.title) task.title = updates.title;
+    if (updates.description) task.description = updates.description;
+    if (updates.status) task.status = { name: updates.status };
+    if (updates.assigned_to_email) task.owner = { email_id: updates.assigned_to_email };
+    const params = { input_data: JSON.stringify({ task }) };
+    const response = await this.client.put('/requests/' + requestId + '/tasks/' + taskId, null, { params });
+    return response.data.task;
+  }
+
+  // REQUEST WORKLOGS
+  async getRequestWorklogs(requestId) {
+    const response = await this.client.get('/requests/' + requestId + '/worklogs');
+    return response.data.worklogs || [];
+  }
+
+  async addRequestWorklog(requestId, worklogData) {
+    const worklog = { description: worklogData.description };
+    if (worklogData.technician_email) worklog.technician = { email_id: worklogData.technician_email };
+    if (worklogData.hours_spent) worklog.time_spent = String(Math.round(worklogData.hours_spent * 60)); // SDP uses minutes
+    if (worklogData.worklog_date) worklog.worklog_date = { value: worklogData.worklog_date };
+    const params = { input_data: JSON.stringify({ worklog }) };
+    const response = await this.client.post('/requests/' + requestId + '/worklogs', null, { params });
+    return response.data.worklog;
+  }
+
+  // CHANGE NOTES
+  async addChangeNote(changeId, noteContent, isPublic = true) {
+    const note = { description: noteContent, show_to_requester: isPublic };
+    const params = { input_data: JSON.stringify({ note }) };
+    const response = await this.client.post('/changes/' + changeId + '/notes', null, { params });
+    return response.data.note;
+  }
+
+  // SOLUTION UPDATE
+  async updateSolution(solutionId, updates) {
+    const solution = {};
+    if (updates.title) solution.title = updates.title;
+    if (updates.content) solution.description = updates.content;
+    if (updates.keywords) solution.keywords = updates.keywords;
+    if (updates.topic) solution.topic = { name: updates.topic };
+    const params = { input_data: JSON.stringify({ solution }) };
+    const response = await this.client.put('/solutions/' + solutionId, null, { params });
+    return response.data.solution;
+  }
+
+  // ASSET UPDATE
+  async updateAsset(assetId, updates) {
+    const asset = {};
+    if (updates.name) asset.name = updates.name;
+    if (updates.state) asset.asset_state = { name: updates.state };
+    if (updates.asset_tag) asset.asset_tag = updates.asset_tag;
+    if (updates.assigned_user_email) asset.used_by = { email_id: updates.assigned_user_email };
+    if (updates.location) asset.location = { name: updates.location };
+    const params = { input_data: JSON.stringify({ asset }) };
+    const response = await this.client.put('/assets/' + assetId, null, { params });
+    return response.data.asset;
   }
 }
 

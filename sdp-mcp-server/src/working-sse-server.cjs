@@ -743,6 +743,197 @@ const toolImplementations = {
     return { content: [{ type: 'text', text: JSON.stringify({ request_id, attachments, total: attachments.length }, null, 2) }] };
   },
 
+  // PROBLEMS
+  async list_problems(params) {
+    const { limit = 25, status, sort_by = 'created_time', sort_order = 'desc' } = params;
+    const result = await sdpClient.listProblems({ limit, status, sort_field: sort_by, sort_order });
+    const formatted = (result.problems || []).map(p => ({
+      id: p.id, title: p.title, status: p.status?.name, priority: p.priority?.name,
+      impact: p.impact?.name, created_time: p.created_time?.display_value,
+      technician: p.technician?.name
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ problems: formatted, total_count: result.total_count }, null, 2) }] };
+  },
+
+  async get_problem(params) {
+    const { problem_id } = params;
+    if (!problem_id) throw new Error('problem_id is required');
+    const p = await sdpClient.getProblem(problem_id);
+    return { content: [{ type: 'text', text: JSON.stringify({
+      id: p.id, title: p.title, description: p.description, status: p.status?.name,
+      priority: p.priority?.name, impact: p.impact?.name, root_cause: p.root_cause,
+      symptom: p.symptom, impact_details: p.impact_details,
+      technician: p.technician?.name, created_time: p.created_time?.display_value
+    }, null, 2) }] };
+  },
+
+  async create_problem(params) {
+    const { title } = params;
+    if (!title) throw new Error('title is required');
+    const problem = await sdpClient.createProblem(params);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, problem_id: problem?.id, title: problem?.title, message: 'Problem created successfully' }, null, 2) }] };
+  },
+
+  async update_problem(params) {
+    const { problem_id, ...updates } = params;
+    if (!problem_id) throw new Error('problem_id is required');
+    const problem = await sdpClient.updateProblem(problem_id, updates);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, problem_id, status: problem?.status?.name, message: 'Problem updated successfully' }, null, 2) }] };
+  },
+
+  async close_problem(params) {
+    const { problem_id, closure_comments } = params;
+    if (!problem_id) throw new Error('problem_id is required');
+    const problem = await sdpClient.closeProblem(problem_id, closure_comments);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, problem_id, status: problem?.status?.name, message: 'Problem closed successfully' }, null, 2) }] };
+  },
+
+  // REQUEST TASKS
+  async get_request_tasks(params) {
+    const { request_id } = params;
+    if (!request_id) throw new Error('request_id is required');
+    const tasks = await sdpClient.getRequestTasks(request_id);
+    return { content: [{ type: 'text', text: JSON.stringify({ request_id, tasks, total: tasks.length }, null, 2) }] };
+  },
+
+  async add_request_task(params) {
+    const { request_id, title } = params;
+    if (!request_id || !title) throw new Error('request_id and title are required');
+    const task = await sdpClient.addRequestTask(request_id, params);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, task_id: task?.id, title: task?.title, message: 'Task added successfully' }, null, 2) }] };
+  },
+
+  async update_request_task(params) {
+    const { request_id, task_id, ...updates } = params;
+    if (!request_id || !task_id) throw new Error('request_id and task_id are required');
+    const task = await sdpClient.updateRequestTask(request_id, task_id, updates);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, task_id, status: task?.status?.name, message: 'Task updated successfully' }, null, 2) }] };
+  },
+
+  // REQUEST WORKLOGS
+  async get_request_worklogs(params) {
+    const { request_id } = params;
+    if (!request_id) throw new Error('request_id is required');
+    const worklogs = await sdpClient.getRequestWorklogs(request_id);
+    return { content: [{ type: 'text', text: JSON.stringify({ request_id, worklogs, total: worklogs.length }, null, 2) }] };
+  },
+
+  async add_request_worklog(params) {
+    const { request_id, description } = params;
+    if (!request_id || !description) throw new Error('request_id and description are required');
+    const worklog = await sdpClient.addRequestWorklog(request_id, params);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, worklog_id: worklog?.id, message: 'Worklog added successfully' }, null, 2) }] };
+  },
+
+  // CHANGE NOTES
+  async add_change_note(params) {
+    const { change_id, note_content, is_public = true } = params;
+    if (!change_id || !note_content) throw new Error('change_id and note_content are required');
+    const note = await sdpClient.addChangeNote(change_id, note_content, is_public);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, note_id: note?.id, message: 'Note added to change successfully' }, null, 2) }] };
+  },
+
+  // SOLUTION UPDATE
+  async update_solution(params) {
+    const { solution_id, ...updates } = params;
+    if (!solution_id) throw new Error('solution_id is required');
+    const solution = await sdpClient.updateSolution(solution_id, updates);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, solution_id, title: solution?.title, message: 'Solution updated successfully' }, null, 2) }] };
+  },
+
+  // ASSET UPDATE
+  async update_asset(params) {
+    const { asset_id, ...updates } = params;
+    if (!asset_id) throw new Error('asset_id is required');
+    const asset = await sdpClient.updateAsset(asset_id, updates);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, asset_id, name: asset?.name, state: asset?.asset_state?.name, message: 'Asset updated successfully' }, null, 2) }] };
+  },
+
+  // CMDB
+  async list_cis(params) {
+    const { limit = 25, ci_type, search, sort_by = 'name', sort_order = 'asc' } = params;
+    const result = await sdpClient.listCIs({ limit, ci_type, search, sort_field: sort_by, sort_order });
+    const formatted = (result.cis || []).map(ci => ({
+      id: ci.id, name: ci.name, ci_type: ci.citype?.name || ci.ci_type?.name,
+      status: ci.status?.name, impact: ci.impact?.name, location: ci.location?.name
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ cis: formatted, total_count: result.total_count }, null, 2) }] };
+  },
+
+  async get_ci(params) {
+    const { ci_id } = params;
+    if (!ci_id) throw new Error('ci_id is required');
+    const ci = await sdpClient.getCI(ci_id);
+    return { content: [{ type: 'text', text: JSON.stringify(ci, null, 2) }] };
+  },
+
+  async search_cis(params) {
+    const { query, limit = 25, ci_type } = params;
+    if (!query) throw new Error('query is required');
+    const result = await sdpClient.searchCIs(query, { limit, ci_type });
+    const formatted = (result.cis || []).map(ci => ({
+      id: ci.id, name: ci.name, ci_type: ci.citype?.name || ci.ci_type?.name,
+      status: ci.status?.name, impact: ci.impact?.name
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ query, cis: formatted, total_count: result.total_count }, null, 2) }] };
+  },
+
+  async create_ci(params) {
+    const { name, ci_type } = params;
+    if (!name || !ci_type) throw new Error('name and ci_type are required');
+    const ci = await sdpClient.createCI(params);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, ci_id: ci?.id, name: ci?.name, message: 'CI created successfully' }, null, 2) }] };
+  },
+
+  async update_ci(params) {
+    const { ci_id, ...updates } = params;
+    if (!ci_id) throw new Error('ci_id is required');
+    const ci = await sdpClient.updateCI(ci_id, updates);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, ci_id, name: ci?.name, message: 'CI updated successfully' }, null, 2) }] };
+  },
+
+  async get_ci_relationships(params) {
+    const { ci_id } = params;
+    if (!ci_id) throw new Error('ci_id is required');
+    const relationships = await sdpClient.getCIRelationships(ci_id);
+    return { content: [{ type: 'text', text: JSON.stringify({ ci_id, relationships, total: relationships.length }, null, 2) }] };
+  },
+
+  async add_ci_relationship(params) {
+    const { ci_id, related_ci_id, relationship_type } = params;
+    if (!ci_id || !related_ci_id || !relationship_type) throw new Error('ci_id, related_ci_id, and relationship_type are required');
+    const rel = await sdpClient.addCIRelationship(ci_id, related_ci_id, relationship_type);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, message: `Relationship '${relationship_type}' added between CIs`, relationship: rel }, null, 2) }] };
+  },
+
+  // MAINTENANCE WINDOWS
+  async list_maintenance_windows(params) {
+    const { limit = 25, sort_order = 'asc' } = params;
+    const result = await sdpClient.listMaintenanceWindows({ limit, sort_order });
+    return { content: [{ type: 'text', text: JSON.stringify({ maintenance_windows: result.maintenance_windows, total_count: result.total_count }, null, 2) }] };
+  },
+
+  async get_maintenance_window(params) {
+    const { window_id } = params;
+    if (!window_id) throw new Error('window_id is required');
+    const window = await sdpClient.getMaintenanceWindow(window_id);
+    return { content: [{ type: 'text', text: JSON.stringify(window, null, 2) }] };
+  },
+
+  async create_maintenance_window(params) {
+    const { name, scheduled_start_time, scheduled_end_time } = params;
+    if (!name || !scheduled_start_time || !scheduled_end_time) throw new Error('name, scheduled_start_time, and scheduled_end_time are required');
+    const window = await sdpClient.createMaintenanceWindow(params);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, window_id: window?.id, name: window?.name, message: 'Maintenance window created successfully' }, null, 2) }] };
+  },
+
+  async update_maintenance_window(params) {
+    const { window_id, ...updates } = params;
+    if (!window_id) throw new Error('window_id is required');
+    const window = await sdpClient.updateMaintenanceWindow(window_id, updates);
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, window_id, name: window?.name, message: 'Maintenance window updated successfully' }, null, 2) }] };
+  },
+
 };
 // Tool definitions
 const tools = [
@@ -1126,7 +1317,45 @@ const tools = [
   { name: 'get_solution', description: 'Get a specific knowledge base article', inputSchema: { type: 'object', properties: { solution_id: { type: 'string' } }, required: ['solution_id'] } },
   { name: 'search_solutions', description: 'Search knowledge base articles by keyword', inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number', default: 25 } }, required: ['query'] } },
   { name: 'create_solution', description: 'Create a new knowledge base article', inputSchema: { type: 'object', properties: { title: { type: 'string' }, content: { type: 'string' }, keywords: { type: 'string', description: 'Comma-separated keywords' }, topic: { type: 'string', description: 'Topic/category name' } }, required: ['title','content'] } },
-  { name: 'get_attachments', description: 'Get attachments for a request', inputSchema: { type: 'object', properties: { request_id: { type: 'string' } }, required: ['request_id'] } }
+  { name: 'get_attachments', description: 'Get attachments for a request', inputSchema: { type: 'object', properties: { request_id: { type: 'string' } }, required: ['request_id'] } },
+
+  // PROBLEMS
+  { name: 'list_problems', description: 'List problem records with optional filters', inputSchema: { type: 'object', properties: { limit: { type: 'number', default: 25, maximum: 100 }, status: { type: 'string', enum: ['Open', 'In Progress', 'Resolved', 'Closed'] }, sort_by: { type: 'string', enum: ['created_time', 'title', 'priority'], default: 'created_time' }, sort_order: { type: 'string', enum: ['asc', 'desc'], default: 'desc' } } } },
+  { name: 'get_problem', description: 'Get detailed information about a specific problem', inputSchema: { type: 'object', properties: { problem_id: { type: 'string', description: 'The problem ID' } }, required: ['problem_id'] } },
+  { name: 'create_problem', description: 'Create a new problem record', inputSchema: { type: 'object', properties: { title: { type: 'string', description: 'Problem title' }, description: { type: 'string' }, priority: { type: 'string', enum: ['Low', 'Medium', 'High', 'Urgent'] }, impact: { type: 'string', enum: ['Low', 'Medium', 'High'] }, status: { type: 'string' } }, required: ['title'] } },
+  { name: 'update_problem', description: 'Update an existing problem record', inputSchema: { type: 'object', properties: { problem_id: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, status: { type: 'string' }, priority: { type: 'string', enum: ['Low', 'Medium', 'High', 'Urgent'] }, impact: { type: 'string', enum: ['Low', 'Medium', 'High'] }, root_cause: { type: 'string' }, symptom: { type: 'string' }, impact_details: { type: 'string' } }, required: ['problem_id'] } },
+  { name: 'close_problem', description: 'Close a problem record', inputSchema: { type: 'object', properties: { problem_id: { type: 'string' }, closure_comments: { type: 'string' } }, required: ['problem_id'] } },
+
+  // REQUEST TASKS & WORKLOGS
+  { name: 'get_request_tasks', description: 'Get all tasks for a request', inputSchema: { type: 'object', properties: { request_id: { type: 'string' } }, required: ['request_id'] } },
+  { name: 'add_request_task', description: 'Add a task to a request', inputSchema: { type: 'object', properties: { request_id: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, assigned_to_email: { type: 'string' }, due_date: { type: 'string', description: 'ISO 8601 date' } }, required: ['request_id', 'title'] } },
+  { name: 'update_request_task', description: 'Update a task on a request', inputSchema: { type: 'object', properties: { request_id: { type: 'string' }, task_id: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, status: { type: 'string' }, assigned_to_email: { type: 'string' } }, required: ['request_id', 'task_id'] } },
+  { name: 'get_request_worklogs', description: 'Get all worklogs/time entries for a request', inputSchema: { type: 'object', properties: { request_id: { type: 'string' } }, required: ['request_id'] } },
+  { name: 'add_request_worklog', description: 'Add a worklog/time entry to a request', inputSchema: { type: 'object', properties: { request_id: { type: 'string' }, description: { type: 'string' }, technician_email: { type: 'string' }, hours_spent: { type: 'number', description: 'Hours spent (e.g. 1.5)' }, worklog_date: { type: 'string', description: 'ISO 8601 date' } }, required: ['request_id', 'description'] } },
+
+  // CHANGES — additional
+  { name: 'add_change_note', description: 'Add a note to a change request', inputSchema: { type: 'object', properties: { change_id: { type: 'string' }, note_content: { type: 'string' }, is_public: { type: 'boolean', default: true } }, required: ['change_id', 'note_content'] } },
+
+  // SOLUTIONS — additional
+  { name: 'update_solution', description: 'Update an existing knowledge base article', inputSchema: { type: 'object', properties: { solution_id: { type: 'string' }, title: { type: 'string' }, content: { type: 'string', description: 'Article body content' }, keywords: { type: 'string' }, topic: { type: 'string' } }, required: ['solution_id'] } },
+
+  // ASSETS — additional
+  { name: 'update_asset', description: 'Update an existing asset record', inputSchema: { type: 'object', properties: { asset_id: { type: 'string' }, name: { type: 'string' }, state: { type: 'string', enum: ['In Use', 'In Stock', 'In Repair', 'Disposed', 'Expired', 'Loaned'] }, asset_tag: { type: 'string' }, assigned_user_email: { type: 'string' }, location: { type: 'string' } }, required: ['asset_id'] } },
+
+  // CMDB
+  { name: 'list_cis', description: 'List configuration items (CIs) from CMDB', inputSchema: { type: 'object', properties: { limit: { type: 'number', default: 25, maximum: 100 }, ci_type: { type: 'string', description: 'Filter by CI type (e.g. Server, Workstation, Switch)' }, search: { type: 'string' }, sort_by: { type: 'string', default: 'name' }, sort_order: { type: 'string', enum: ['asc', 'desc'], default: 'asc' } } } },
+  { name: 'get_ci', description: 'Get detailed information about a specific CI', inputSchema: { type: 'object', properties: { ci_id: { type: 'string' } }, required: ['ci_id'] } },
+  { name: 'search_cis', description: 'Search configuration items by name', inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number', default: 25 }, ci_type: { type: 'string' } }, required: ['query'] } },
+  { name: 'create_ci', description: 'Create a new configuration item in CMDB', inputSchema: { type: 'object', properties: { name: { type: 'string' }, ci_type: { type: 'string', description: 'CI type name (e.g. Server, Workstation, Switch, Router, Software)' }, description: { type: 'string' }, impact: { type: 'string', enum: ['Low', 'Medium', 'High'] }, location: { type: 'string' }, assigned_user_email: { type: 'string' } }, required: ['name', 'ci_type'] } },
+  { name: 'update_ci', description: 'Update an existing configuration item', inputSchema: { type: 'object', properties: { ci_id: { type: 'string' }, name: { type: 'string' }, description: { type: 'string' }, impact: { type: 'string', enum: ['Low', 'Medium', 'High'] }, location: { type: 'string' }, assigned_user_email: { type: 'string' }, status: { type: 'string' } }, required: ['ci_id'] } },
+  { name: 'get_ci_relationships', description: 'Get all relationships for a CI', inputSchema: { type: 'object', properties: { ci_id: { type: 'string' } }, required: ['ci_id'] } },
+  { name: 'add_ci_relationship', description: 'Add a relationship between two CIs', inputSchema: { type: 'object', properties: { ci_id: { type: 'string' }, related_ci_id: { type: 'string' }, relationship_type: { type: 'string', description: 'e.g. Depends on, Used by, Connected to' } }, required: ['ci_id', 'related_ci_id', 'relationship_type'] } },
+
+  // MAINTENANCE WINDOWS
+  { name: 'list_maintenance_windows', description: 'List scheduled maintenance windows', inputSchema: { type: 'object', properties: { limit: { type: 'number', default: 25 }, sort_order: { type: 'string', enum: ['asc', 'desc'], default: 'asc' } } } },
+  { name: 'get_maintenance_window', description: 'Get details of a specific maintenance window', inputSchema: { type: 'object', properties: { window_id: { type: 'string' } }, required: ['window_id'] } },
+  { name: 'create_maintenance_window', description: 'Create a scheduled maintenance window (e.g. for patch Tuesday)', inputSchema: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, scheduled_start_time: { type: 'string', description: 'ISO 8601 datetime' }, scheduled_end_time: { type: 'string', description: 'ISO 8601 datetime' }, ci_ids: { type: 'array', items: { type: 'string' }, description: 'CI IDs to include in window' } }, required: ['name', 'scheduled_start_time', 'scheduled_end_time'] } },
+  { name: 'update_maintenance_window', description: 'Update an existing maintenance window', inputSchema: { type: 'object', properties: { window_id: { type: 'string' }, name: { type: 'string' }, description: { type: 'string' }, scheduled_start_time: { type: 'string' }, scheduled_end_time: { type: 'string' }, ci_ids: { type: 'array', items: { type: 'string' } } }, required: ['window_id'] } }
 
 ];
 
